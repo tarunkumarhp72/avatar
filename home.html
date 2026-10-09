@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Local Services Marketplace</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#c5c6d0",
+            "on-secondary-container": "#6d4700",
+            "surface-container": "#edeeef",
+            "secondary-fixed-dim": "#ffb94c",
+            "primary-container": "#1a2e5e",
+            "on-secondary-fixed-variant": "#624000",
+            "on-background": "#191c1d",
+            "background": "#f8f9fa",
+            "error-container": "#ffdad6",
+            "outline": "#757780",
+            "on-secondary": "#ffffff",
+            "surface": "#f8f9fa",
+            "primary-fixed": "#dae2ff",
+            "tertiary-container": "#003914",
+            "on-primary": "#ffffff",
+            "inverse-primary": "#b3c5ff",
+            "on-tertiary-fixed": "#002109",
+            "surface-tint": "#4a5d8f",
+            "on-primary-container": "#8497cd",
+            "on-tertiary": "#ffffff",
+            "primary-fixed-dim": "#b3c5ff",
+            "on-surface-variant": "#44464f",
+            "secondary-container": "#feb234",
+            "surface-container-high": "#e7e8e9",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-container": "#29ae53",
+            "tertiary-fixed-dim": "#62df7d",
+            "inverse-on-surface": "#f0f1f2",
+            "tertiary": "#002109",
+            "on-secondary-fixed": "#291800",
+            "secondary": "#815500",
+            "surface-bright": "#f8f9fa",
+            "surface-variant": "#e1e3e4",
+            "tertiary-fixed": "#7ffc97",
+            "on-primary-fixed-variant": "#324576",
+            "on-error": "#ffffff",
+            "surface-dim": "#d9dadb",
+            "on-surface": "#191c1d",
+            "surface-container-low": "#f3f4f5",
+            "surface-container-highest": "#e1e3e4",
+            "on-tertiary-fixed-variant": "#005320",
+            "on-primary-fixed": "#001848",
+            "secondary-fixed": "#ffddb2",
+            "on-error-container": "#93000a",
+            "inverse-surface": "#2e3132",
+            "primary": "#001848",
+            "error": "#ba1a1a"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Inter", "sans-serif"],
+            "display": ["Inter", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "label": ["Inter", "sans-serif"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body antialiased selection:bg-secondary-fixed selection:text-on-secondary-fixed min-h-screen pb-24">
+<!-- Responsive Container (Mobile-first max-w-md centered) -->
+<div class="max-w-md mx-auto min-h-screen bg-surface-bright flex flex-col relative shadow-xl overflow-x-hidden">
+<!-- 1. Shared TopAppBar Component -->
+<!-- Executing JSON: headline: Downtown, Austin | leading: location_on | trailing: notifications | sticky shell -->
+<header class="bg-surface shadow-sm docked full-width top-0 flex justify-between items-center w-full px-4 py-3 sticky top-0 z-40">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary active:scale-95 transition-transform duration-150">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="location_on" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div>
+<span class="block text-xs font-label text-on-surface-variant font-medium leading-none">Your Location</span>
+<button class="flex items-center gap-1 group text-left mt-0.5" type="button">
+<span class="text-base font-headline font-bold text-on-surface group-hover:text-primary transition-colors">Downtown, Austin</span>
+<span class="material-symbols-outlined text-outline text-lg" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Notifications" class="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-95 transition-transform duration-150" type="button">
+<span class="material-symbols-outlined text-2xl" data-icon="notifications">notifications</span>
+<!-- Unread Badge Indicator -->
+<span class="absolute top-2 right-2 w-2.5 h-2.5 bg-secondary-container rounded-full ring-2 ring-surface-bright animate-pulse"></span>
+</button>
+</div>
+</header>
+<!-- Main Content Flow -->
+<main class="flex-1 px-4 pt-3 space-y-6">
+<!-- 2. Search & Filter Bar Section -->
+<section class="space-y-3">
+<div class="relative flex items-center shadow-sm">
+<div class="absolute left-3.5 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-xl" data-icon="search">search</span>
+</div>
+<input class="w-full h-12 pl-11 pr-12 rounded-lg bg-surface-container-lowest border border-outline-variant/60 text-sm font-body text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="Search plumbers, electricians, cleaners..." type="text"/>
+<button aria-label="Filters" class="absolute right-2 w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="tune">tune</span>
+</button>
+</div>
+<!-- Quick Filter Pills (Horizontal Scrollable) -->
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4">
+<button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-primary text-on-primary text-xs font-medium flex items-center gap-1.5 shadow-sm active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-xs" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span>Instant Booking</span>
+</button>
+<button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container-lowest border border-outline-variant/60 text-on-surface-variant text-xs font-medium flex items-center gap-1.5 hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-secondary text-xs" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>Top Rated (4.8+)</span>
+</button>
+<button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container-lowest border border-outline-variant/60 text-on-surface-variant text-xs font-medium hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span>Under $50/hr</span>
+</button>
+<button class="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-surface-container-lowest border border-outline-variant/60 text-on-surface-variant text-xs font-medium flex items-center gap-1 hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+<span>Emergency 24/7</span>
+</button>
+</div>
+</section>
+<!-- 3. Promo / Trust Guarantee Banner -->
+<section>
+<div class="relative overflow-hidden rounded-xl bg-primary-container p-4.5 text-on-primary shadow-sm border border-outline-variant/20">
+<!-- Subtle graphic background element -->
+<div class="absolute -right-6 -bottom-8 w-32 h-32 rounded-full bg-surface-tint/20 blur-xl pointer-events-none"></div>
+<div class="relative z-10 flex items-start justify-between gap-3">
+<div class="space-y-1.5">
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-lowest/15 backdrop-blur-sm text-[11px] font-semibold text-secondary-fixed">
+<span class="material-symbols-outlined text-xs" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span>Peace of Mind Guarantee</span>
+</div>
+<h2 class="text-sm font-headline font-bold text-surface-bright leading-snug">
+                Up to $1,000 protection on every booking
+              </h2>
+<p class="text-xs text-on-primary-container font-normal leading-relaxed">
+                Vetted, licensed professionals with insurance verification and escrow protection.
+              </p>
+</div>
+</div>
+<div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between">
+<span class="text-[11px] text-surface-variant">Zero hidden fees • Verified IDs</span>
+<button class="inline-flex items-center text-xs font-semibold text-secondary-container hover:underline group" type="button">
+<span>Learn more</span>
+<span class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-0.5" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 4. Service Categories Grid (2-row Grid) -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<h2 class="text-base font-headline font-bold text-on-surface">Explore Services</h2>
+<span class="text-xs font-medium text-outline">8 categories</span>
+</div>
+<div class="grid grid-cols-4 gap-2.5">
+<!-- Plumber -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-13 h-13 w-12 h-12 rounded-full bg-primary-fixed/60 group-hover:bg-primary-fixed flex items-center justify-center text-primary mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="plumbing">plumbing</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">Plumber</span>
+</button>
+<!-- Electrician -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-12 h-12 rounded-full bg-secondary-fixed/50 group-hover:bg-secondary-fixed flex items-center justify-center text-secondary mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="electric_bolt" style="font-variation-settings: 'FILL' 1;">electric_bolt</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">Electrician</span>
+</button>
+<!-- Maid / House Cleaner -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest group-hover:bg-surface-container-high flex items-center justify-center text-primary-container mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="cleaning_services">cleaning_services</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">Cleaner</span>
+</button>
+<!-- Mechanic -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed/30 group-hover:bg-tertiary-fixed/50 flex items-center justify-center text-on-tertiary-container mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="car_repair">car_repair</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">Mechanic</span>
+</button>
+<!-- Carpenter -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-12 h-12 rounded-full bg-secondary-fixed-dim/30 group-hover:bg-secondary-fixed-dim/50 flex items-center justify-center text-on-secondary-container mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="carpenter">carpenter</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">Carpenter</span>
+</button>
+<!-- Painter -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-12 h-12 rounded-full bg-primary-fixed-dim/40 group-hover:bg-primary-fixed-dim/70 flex items-center justify-center text-primary mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="format_paint">format_paint</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">Painter</span>
+</button>
+<!-- HVAC Specialist -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-12 h-12 rounded-full bg-surface-variant group-hover:bg-surface-container-high flex items-center justify-center text-primary-container mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="mode_fan">mode_fan</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">HVAC Pro</span>
+</button>
+<!-- Locksmith -->
+<button class="group flex flex-col items-center text-center p-2 rounded-lg hover:bg-surface-container transition-all active:scale-95" type="button">
+<div class="w-12 h-12 rounded-full bg-error-container/50 group-hover:bg-error-container flex items-center justify-center text-error mb-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="lock_open">lock_open</span>
+</div>
+<span class="text-xs font-label font-semibold text-on-surface line-clamp-1">Locksmith</span>
+</button>
+</div>
+</section>
+<!-- 5. Top Rated Workers Nearby Section -->
+<section class="space-y-3.5">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-base font-headline font-bold text-on-surface">Top Rated Workers Nearby</h2>
+<p class="text-xs text-on-surface-variant font-medium">Verified local experts ready to help</p>
+</div>
+<a class="text-xs font-headline font-bold text-primary hover:underline flex items-center gap-0.5" href="#all-pros">
+<span>See All</span>
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</a>
+</div>
+<div class="space-y-3">
+<!-- Worker 1: Marcus Vance -->
+<article class="p-3.5 rounded-lg bg-surface-container-lowest border border-outline-variant/50 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="relative">
+<img class="w-14 h-14 rounded-lg object-cover ring-1 ring-outline-variant/40" data-alt="A professional portrait of Marcus Vance, a warm and confident master plumber wearing clean navy blue workwear in a modern residential workshop setting, rendered in crisp soft natural studio lighting with indigo blue and amber accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBDh7_kiYlBbcurUQ-lglOa_Jo20IjtYyDZ0IgzodwSzD5fezfkCIcocyjz3pVVg0Rs2YHysy4hHKBPA6WyKRc1sRJdy42m58DOFgxs1URfnA7k-I9rDDd22bM9X4rWidDaxH-apKMB4XRYlThpxRiapKyiNFK6OzAPz3oysKkquRXFS5xsvTq6GbgVFzxz_f-awENcuIcZSWn0chus6JHjUQCUq5o81Sh6PzQ9RXnhqem-riMio5fHtt8IkDqz35--CG-BACGmkOC"/>
+<span class="absolute -bottom-1 -right-1 w-5 h-5 bg-tertiary-container rounded-full flex items-center justify-center text-on-tertiary shadow-sm" title="Verified Professional">
+<span class="material-symbols-outlined text-xs" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h3 class="text-sm font-headline font-bold text-on-surface">Marcus Vance</h3>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="verified" style="font-variation-settings: 'FILL' 1;" title="Identity Verified">verified</span>
+</div>
+<p class="text-xs font-medium text-on-surface-variant">Master Plumber • 8 yrs exp</p>
+<div class="flex items-center gap-2 mt-1">
+<div class="flex items-center gap-0.5 text-xs font-semibold text-on-surface">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>4.9</span>
+<span class="text-outline text-[11px] font-normal">(184)</span>
+</div>
+<span class="text-outline text-xs">•</span>
+<span class="text-xs font-semibold text-primary">$65<span class="text-xs font-normal text-outline">/hr</span></span>
+</div>
+</div>
+</div>
+<!-- Status chip: Available Today -->
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed/30 text-on-tertiary-container text-[11px] font-semibold flex items-center gap-1 whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+<span>Available Today</span>
+</span>
+</div>
+<!-- Card Actions -->
+<div class="pt-2 border-t border-surface-container flex items-center justify-between gap-2">
+<span class="text-[11px] text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="near_me">near_me</span>
+<span>1.4 miles away</span>
+</span>
+<div class="flex items-center gap-2">
+<button class="px-3 h-9 rounded-lg border border-outline-variant/80 text-xs font-medium text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button">
+                  Profile
+                </button>
+<button class="px-4.5 h-9 rounded-lg bg-secondary-container text-on-secondary-fixed text-xs font-bold hover:bg-secondary-fixed-dim active:scale-95 transition-all shadow-sm" type="button">
+                  Book
+                </button>
+</div>
+</div>
+</article>
+<!-- Worker 2: Elena Rostova -->
+<article class="p-3.5 rounded-lg bg-surface-container-lowest border border-outline-variant/50 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="relative">
+<img class="w-14 h-14 rounded-lg object-cover ring-1 ring-outline-variant/40" data-alt="A friendly and professional portrait of Elena Rostova, a home organizer and cleaner in a neat bright Scandinavian home, soft ambient morning sunlight, smiling genuinely in pristine navy apron, high visual detail and modern editorial quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPWYeOgJK98AycrI9J0mcro5RQu4TwExcktL3cC2G7ZkEIFa1J6Tl0uAmxXLvFrBGLeROoafsRZIf7S2tPWg4FnqYzNaEVfAk6uCBFt-VT-v8USJwIprrbVI6xA9IaaKDQZgaDx5a60202knSuHyPtNBAFodk9GkhRg4lVYyT0zLa8pGcwhUbrz-3tgm58LLpeIYk61cAxxuAjORZt2yCIcPBlnYUazRRmTRegOdw_-kZVfQ1JteAUa8yYFNEfO9LV-YBf_aHq_7xl"/>
+<span class="absolute -bottom-1 -right-1 w-5 h-5 bg-tertiary-container rounded-full flex items-center justify-center text-on-tertiary shadow-sm" title="Verified Professional">
+<span class="material-symbols-outlined text-xs" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h3 class="text-sm font-headline font-bold text-on-surface">Elena Rostova</h3>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="verified" style="font-variation-settings: 'FILL' 1;" title="Identity Verified">verified</span>
+</div>
+<p class="text-xs font-medium text-on-surface-variant">Home Cleaning &amp; Organizing</p>
+<div class="flex items-center gap-2 mt-1">
+<div class="flex items-center gap-0.5 text-xs font-semibold text-on-surface">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>5.0</span>
+<span class="text-outline text-[11px] font-normal">(242)</span>
+</div>
+<span class="text-outline text-xs">•</span>
+<span class="text-xs font-semibold text-primary">$45<span class="text-xs font-normal text-outline">/hr</span></span>
+</div>
+</div>
+</div>
+<!-- Status chip: Top Rated Pro -->
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-semibold flex items-center gap-1 whitespace-nowrap">
+<span class="material-symbols-outlined text-xs" data-icon="military_tech" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+<span>Top Rated Pro</span>
+</span>
+</div>
+<!-- Card Actions -->
+<div class="pt-2 border-t border-surface-container flex items-center justify-between gap-2">
+<span class="text-[11px] text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="near_me">near_me</span>
+<span>0.8 miles away</span>
+</span>
+<div class="flex items-center gap-2">
+<button class="px-3 h-9 rounded-lg border border-outline-variant/80 text-xs font-medium text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button">
+                  Profile
+                </button>
+<button class="px-4.5 h-9 rounded-lg bg-secondary-container text-on-secondary-fixed text-xs font-bold hover:bg-secondary-fixed-dim active:scale-95 transition-all shadow-sm" type="button">
+                  Book
+                </button>
+</div>
+</div>
+</article>
+<!-- Worker 3: David Chen -->
+<article class="p-3.5 rounded-lg bg-surface-container-lowest border border-outline-variant/50 shadow-sm flex flex-col gap-3">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="relative">
+<img class="w-14 h-14 rounded-lg object-cover ring-1 ring-outline-variant/40" data-alt="A portrait of David Chen, a master licensed electrician smiling confidently while holding insulated hand tools in an architectural modern building interior, clean deep indigo tones, daylight highlights, modern clean photojournalistic style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBk8ncYfxnnHMGHXA6B81yPU56zzhyedxBEOmK49vgfXMYZBpAp4aSK94RerV50ebKed3gSDH_C0u7LT5IUXpqFUkFpEIXhdKLo0S4bLpgU0egTGgjIxaQ0476FUCWCp5CLg7hb2O8uXm9nR9ckNr_e3fSwFcRoiLWB2TDkp1o9gJRmoVVADft8yiACRxDk75OsSMrWKb-r1P5ih7LW3O4OAdMRVCq0vuwe9aWOZ0YZIFfbNKI9YjwSvGJ2jT0-bJ5AslxG_vVfP4a5"/>
+<span class="absolute -bottom-1 -right-1 w-5 h-5 bg-tertiary-container rounded-full flex items-center justify-center text-on-tertiary shadow-sm" title="Verified Professional">
+<span class="material-symbols-outlined text-xs" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h3 class="text-sm font-headline font-bold text-on-surface">David Chen</h3>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="verified" style="font-variation-settings: 'FILL' 1;" title="Identity Verified">verified</span>
+</div>
+<p class="text-xs font-medium text-on-surface-variant">Licensed Electrician</p>
+<div class="flex items-center gap-2 mt-1">
+<div class="flex items-center gap-0.5 text-xs font-semibold text-on-surface">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>4.9</span>
+<span class="text-outline text-[11px] font-normal">(98)</span>
+</div>
+<span class="text-outline text-xs">•</span>
+<span class="text-xs font-semibold text-primary">$75<span class="text-xs font-normal text-outline">/hr</span></span>
+</div>
+</div>
+</div>
+<!-- Status chip: Available Today -->
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed/30 text-on-tertiary-container text-[11px] font-semibold flex items-center gap-1 whitespace-nowrap">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+<span>Available Today</span>
+</span>
+</div>
+<!-- Card Actions -->
+<div class="pt-2 border-t border-surface-container flex items-center justify-between gap-2">
+<span class="text-[11px] text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="near_me">near_me</span>
+<span>2.1 miles away</span>
+</span>
+<div class="flex items-center gap-2">
+<button class="px-3 h-9 rounded-lg border border-outline-variant/80 text-xs font-medium text-on-surface hover:bg-surface-container active:scale-95 transition-all" type="button">
+                  Profile
+                </button>
+<button class="px-4.5 h-9 rounded-lg bg-secondary-container text-on-secondary-fixed text-xs font-bold hover:bg-secondary-fixed-dim active:scale-95 transition-all shadow-sm" type="button">
+                  Book
+                </button>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- 6. Recent Deals & Quick Booking Shortcuts -->
+<section class="space-y-3 pb-4">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-base font-headline font-bold text-on-surface">Popular Quick Fixes</h2>
+<p class="text-xs text-on-surface-variant font-medium">Standard pricing upfront, no haggling</p>
+</div>
+<span class="text-xs font-semibold text-secondary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-sm" data-icon="local_fire_department">local_fire_department</span>
+<span>Trending</span>
+</span>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<!-- Deal 1 -->
+<div class="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col justify-between hover:border-primary transition-all group">
+<div>
+<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-error-container text-error uppercase">Save 20%</span>
+<h3 class="text-xs font-headline font-bold text-on-surface mt-2 group-hover:text-primary transition-colors">AC Tune-Up &amp; Filter Swap</h3>
+<p class="text-[11px] text-outline mt-0.5">60 min inspection</p>
+</div>
+<div class="mt-3 flex items-baseline justify-between">
+<div>
+<span class="text-xs font-bold text-primary">$89</span>
+<span class="text-[10px] text-outline line-through ml-1">$110</span>
+</div>
+<button aria-label="Book AC Tune-Up" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Deal 2 -->
+<div class="p-3 rounded-lg bg-surface-container-lowest border border-outline-variant/40 shadow-sm flex flex-col justify-between hover:border-primary transition-all group">
+<div>
+<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-tertiary-fixed/40 text-on-tertiary-container uppercase">Fast Fix</span>
+<h3 class="text-xs font-headline font-bold text-on-surface mt-2 group-hover:text-primary transition-colors">Leaking Pipe &amp; Drain Clear</h3>
+<p class="text-[11px] text-outline mt-0.5">Same-day dispatch</p>
+</div>
+<div class="mt-3 flex items-baseline justify-between">
+<div>
+<span class="text-xs font-bold text-primary">$79</span>
+<span class="text-[10px] text-outline line-through ml-1">$95</span>
+</div>
+<button aria-label="Book Pipe Drain Clear" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- 7. Shared BottomNavBar Component -->
+<!-- Executing JSON: 4 items (Home, Bookings, Inbox, Profile) | Home active highlighted indigo -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-2 border-t border-surface-container-high bg-surface shadow-[0_-2px_8px_rgba(0,0,0,0.06)] max-w-md mx-auto left-0 right-0">
+<!-- 1: Home (ACTIVE - Exact intent match for customer homepage) -->
+<a class="flex flex-col items-center justify-center text-primary font-semibold py-1 active:scale-95 transition-transform duration-150" href="#home">
+<span class="material-symbols-outlined text-2xl" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-xs font-label font-medium mt-0.5">Home</span>
+</a>
+<!-- 2: Bookings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors py-1 active:scale-95 duration-150" href="#bookings">
+<span class="material-symbols-outlined text-2xl" data-icon="calendar_month">calendar_month</span>
+<span class="text-xs font-label font-medium mt-0.5">Bookings</span>
+</a>
+<!-- 3: Inbox -->
+<a class="relative flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors py-1 active:scale-95 duration-150" href="#inbox">
+<span class="material-symbols-outlined text-2xl" data-icon="chat">chat</span>
+<!-- Small unread badge -->
+<span class="absolute top-1 right-2 w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="text-xs font-label font-medium mt-0.5">Inbox</span>
+</a>
+<!-- 4: Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors py-1 active:scale-95 duration-150" href="#profile">
+<span class="material-symbols-outlined text-2xl" data-icon="person">person</span>
+<span class="text-xs font-label font-medium mt-0.5">Profile</span>
+</a>
+</nav>
+</div>
+</body></html>
