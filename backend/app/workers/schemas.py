@@ -78,3 +78,14 @@ class KYCDocumentResponse(KYCDocumentBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AdminWorkerListResponse(BaseModel):
+    items: list[WorkerProfileResponse]
+    total: int
+    page: int
+    size: int
+
+
+class AdminWorkerDetailResponse(WorkerProfileResponse):
+    kyc_documents: list[KYCDocumentResponse] = Field(default_factory=list)

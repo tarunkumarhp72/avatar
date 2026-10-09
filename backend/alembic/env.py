@@ -24,6 +24,8 @@ import app.core.models
 import app.customers.models
 import app.locations.models
 import app.pricing.models
+import app.reviews.models
+import app.subscriptions.models
 import app.users.models
 import app.workers.models  # noqa: F401
 from app.core.config import settings

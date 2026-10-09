@@ -1,14 +1,13 @@
 import asyncio
-import uuid
 import datetime
+import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import engine
-from app.pricing.models import PricingRule, PricingModel
+from app.pricing.models import PricingModel, PricingRule
 from app.users.models import User, UserRole
-import app.categories.models
-import app.locations.models
+
 
 async def seed_pricing():
     async with AsyncSession(engine) as session:

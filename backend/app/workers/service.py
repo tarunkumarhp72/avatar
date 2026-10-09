@@ -11,7 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import AppError
 from app.locations.models import WorkerServiceArea
 from app.redis.keys import WORKER_ONLINE_TTL, worker_online_key
-from app.workers.models import KYCDocument, WorkerCategory, WorkerLifecycleStatus, WorkerProfile
+from app.workers.models import (
+    KYCDocument,
+    KYCStatus,
+    WorkerCategory,
+    WorkerLifecycleStatus,
+    WorkerProfile,
+)
 from app.workers.schemas import (
     KYCDocumentCreate,
     KYCReviewRequest,
@@ -265,3 +271,57 @@ async def set_worker_lifecycle_status(worker_id: uuid.UUID, lifecycle_status: Wo
     await db.commit()
     await db.refresh(profile)
     return profile
+
+
+async def list_workers_for_admin(
+    db: AsyncSession,
+    kyc_status: KYCStatus | None = None,
+    lifecycle_status: WorkerLifecycleStatus | None = None,
+    page: int = 1,
+    size: int = 50,
+) -> tuple[Sequence[WorkerProfile], int]:
+    from sqlalchemy import func
+    
+    stmt = select(WorkerProfile)
+    
+    if lifecycle_status:
+        stmt = stmt.where(WorkerProfile.status == lifecycle_status)
+        
+    if kyc_status:
+        # Require a join with KYCDocument or similar logic, but for simplicity we can
+        # just filter by workers who have at least one doc with this status, or 
+        # assume we want to query based on the latest doc. Let's do a simple join.
+        stmt = stmt.join(KYCDocument, KYCDocument.worker_id == WorkerProfile.id)
+        stmt = stmt.where(KYCDocument.status == kyc_status)
+        stmt = stmt.distinct()
+        
+    # Get total count
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = await db.scalar(count_stmt) or 0
+    
+    # Get paginated items
+    stmt = stmt.order_by(WorkerProfile.created_at.desc()).offset((page - 1) * size).limit(size)
+    result = await db.execute(stmt)
+    items = result.scalars().all()
+    
+    return items, total
+
+
+async def get_worker_detail_for_admin(
+    worker_id: uuid.UUID,
+    db: AsyncSession,
+) -> dict[str, typing.Any]:
+    stmt = select(WorkerProfile).where(WorkerProfile.id == worker_id)
+    result = await db.execute(stmt)
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise AppError(code="NOT_FOUND", message="Worker profile not found", status_code=status.HTTP_404_NOT_FOUND)
+        
+    kyc_docs = await get_kyc_documents_by_worker_id(worker_id, db)
+    
+    # Return a dict that matches the AdminWorkerDetailResponse schema
+    return {
+        **profile.__dict__,
+        "id": profile.id,  # Ensure ID is explicitly set if using dict unpack
+        "kyc_documents": kyc_docs
+    }

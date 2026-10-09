@@ -72,6 +72,7 @@ async def get_customer_profile(
     current: tuple[User, TokenPayload] = Depends(get_current_user),
 ) -> "CustomerProfile":
     from sqlalchemy import select
+
     from app.customers.models import CustomerProfile
 
     user, _ = current
@@ -90,6 +91,7 @@ async def get_worker_profile(
     current: tuple[User, TokenPayload] = Depends(get_current_user),
 ) -> "WorkerProfile":
     from sqlalchemy import select
+
     from app.workers.models import WorkerProfile
 
     user, _ = current

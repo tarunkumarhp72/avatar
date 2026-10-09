@@ -1,9 +1,9 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+import redis.asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis.asyncio as aioredis
 
 from app.bookings.models import Booking, BookingStatus
 from app.bookings.schemas import BookingCreateRequest
@@ -108,7 +108,7 @@ async def accept_booking(
 
         booking.worker_id = worker_profile.id
         booking.status = BookingStatus.ACCEPTED
-        booking.accepted_at = datetime.now(timezone.utc)
+        booking.accepted_at = datetime.now(UTC)
 
         await db.commit()
         await db.refresh(booking)
@@ -122,7 +122,7 @@ async def start_en_route(booking_id: uuid.UUID, worker_profile: WorkerProfile, d
     _assert_valid_worker(booking, worker_profile.id)
     _assert_transition(booking.status, BookingStatus.EN_ROUTE)
     booking.status = BookingStatus.EN_ROUTE
-    booking.en_route_at = datetime.now(timezone.utc)
+    booking.en_route_at = datetime.now(UTC)
     await db.commit()
     await db.refresh(booking)
     return booking
@@ -133,7 +133,7 @@ async def start_job(booking_id: uuid.UUID, worker_profile: WorkerProfile, db: As
     _assert_valid_worker(booking, worker_profile.id)
     _assert_transition(booking.status, BookingStatus.IN_PROGRESS)
     booking.status = BookingStatus.IN_PROGRESS
-    booking.started_at = datetime.now(timezone.utc)
+    booking.started_at = datetime.now(UTC)
     await db.commit()
     await db.refresh(booking)
     return booking
@@ -154,7 +154,7 @@ async def complete_job(
     final_amount = (booking.estimated_amount_paise or 0) + material_charges_paise
 
     booking.status = BookingStatus.COMPLETED
-    booking.completed_at = datetime.now(timezone.utc)
+    booking.completed_at = datetime.now(UTC)
     booking.material_charges_paise = material_charges_paise
     booking.final_amount_paise = final_amount
     await db.commit()
@@ -175,7 +175,7 @@ async def cancel_booking_by_customer(
 
     _assert_transition(booking.status, BookingStatus.CANCELLED_BY_CUSTOMER)
     booking.status = BookingStatus.CANCELLED_BY_CUSTOMER
-    booking.cancelled_at = datetime.now(timezone.utc)
+    booking.cancelled_at = datetime.now(UTC)
     booking.cancellation_reason = reason
     await db.commit()
     await db.refresh(booking)
@@ -208,6 +208,60 @@ async def list_pending_bookings(db: AsyncSession) -> list[Booking]:
         .order_by(Booking.is_emergency.desc(), Booking.created_at.asc())
     )
     return list(result.scalars().all())
+
+
+# ------------------------------------------------------------------ #
+# Admin endpoints
+# ------------------------------------------------------------------ #
+async def list_bookings_for_admin(
+    db: AsyncSession,
+    status: BookingStatus | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    category_id: uuid.UUID | None = None,
+    page: int = 1,
+    size: int = 50,
+) -> tuple[list[Booking], int]:
+    from sqlalchemy import func
+    
+    stmt = select(Booking)
+    
+    if status:
+        stmt = stmt.where(Booking.status == status)
+    if date_from:
+        stmt = stmt.where(Booking.created_at >= date_from)
+    if date_to:
+        stmt = stmt.where(Booking.created_at <= date_to)
+    if category_id:
+        stmt = stmt.where(Booking.category_id == category_id)
+        
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = await db.scalar(count_stmt) or 0
+    
+    stmt = stmt.order_by(Booking.created_at.desc()).offset((page - 1) * size).limit(size)
+    result = await db.execute(stmt)
+    items = list(result.scalars().all())
+    
+    return items, total
+
+
+async def cancel_booking_by_admin(
+    booking_id: uuid.UUID,
+    reason: str,
+    db: AsyncSession,
+) -> Booking:
+    booking = await get_booking_or_404(booking_id, db)
+    
+    _assert_transition(booking.status, BookingStatus.CANCELLED_BY_ADMIN)
+    
+    booking.status = BookingStatus.CANCELLED_BY_ADMIN
+    booking.cancellation_reason = reason
+    booking.cancelled_at = datetime.now(UTC)
+    
+    await db.commit()
+    await db.refresh(booking)
+    return booking
+
 
 
 # ------------------------------------------------------------------ #

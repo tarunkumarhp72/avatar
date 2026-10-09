@@ -11,8 +11,10 @@ from app.database.session import get_db
 from app.redis.client import get_redis
 from app.users.models import User, UserRole
 from app.workers import service
-from app.workers.models import WorkerProfile
+from app.workers.models import KYCStatus, WorkerLifecycleStatus, WorkerProfile
 from app.workers.schemas import (
+    AdminWorkerDetailResponse,
+    AdminWorkerListResponse,
     KYCDocumentCreate,
     KYCDocumentResponse,
     KYCReviewRequest,
@@ -166,6 +168,35 @@ def require_admin_role(user_data: tuple[User, str] = Depends(get_current_user)) 
     if current_user.role != UserRole.ADMIN:
         raise AppError(code="FORBIDDEN", message="Admin access only", status_code=status.HTTP_403_FORBIDDEN)
     return current_user
+
+
+@admin_router.get("", response_model=AdminWorkerListResponse)
+async def admin_list_workers(
+    kyc_status: KYCStatus | None = None,
+    lifecycle_status: WorkerLifecycleStatus | None = None,
+    page: int = 1,
+    size: int = 50,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_admin_role),
+):
+    """List and filter workers (admin only)."""
+    items, total = await service.list_workers_for_admin(db, kyc_status, lifecycle_status, page, size)
+    return AdminWorkerListResponse(
+        items=items,
+        total=total,
+        page=page,
+        size=size
+    )
+
+
+@admin_router.get("/{id}", response_model=AdminWorkerDetailResponse)
+async def admin_get_worker_detail(
+    id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_admin_role),
+):
+    """Get worker detail with KYC documents (admin only)."""
+    return await service.get_worker_detail_for_admin(id, db)
 
 
 @admin_router.get("/{id}/kyc", response_model=list[KYCDocumentResponse])

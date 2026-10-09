@@ -1,9 +1,9 @@
 import datetime
 import uuid
 
+import redis.asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis.asyncio as aioredis
 
 from app.core.exceptions import AppError
 from app.pricing.models import PricingRule
@@ -51,7 +51,7 @@ async def resolve_pricing_rule(
     lat: float,
     lng: float,
     db: AsyncSession,
-    redis: aioredis.Redis,  # noqa: ARG001 (reserved for caching)
+    redis: aioredis.Redis,
 ) -> PricingRule:
     from sqlalchemy import text
 

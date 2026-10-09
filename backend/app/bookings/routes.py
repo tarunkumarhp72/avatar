@@ -1,8 +1,8 @@
 import uuid
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis.asyncio as aioredis
 
 from app.bookings import service
 from app.bookings.schemas import (
@@ -12,7 +12,7 @@ from app.bookings.schemas import (
     CancelBookingRequest,
     MaterialChargesRequest,
 )
-from app.core.dependencies import get_db, get_redis, get_customer_profile, get_worker_profile
+from app.core.dependencies import get_customer_profile, get_db, get_redis, get_worker_profile
 from app.customers.models import CustomerProfile
 from app.workers.models import WorkerProfile
 
@@ -140,3 +140,58 @@ async def complete_job(
     """Worker marks job complete and declares material charges."""
     booking = await service.complete_job(booking_id, worker, body.material_charges_paise, db, redis_client)
     return BookingResponse.model_validate(booking)
+
+
+# ------------------------------------------------------------------ #
+# Admin endpoints
+# ------------------------------------------------------------------ #
+
+from datetime import datetime
+
+from app.bookings.models import BookingStatus
+from app.bookings.schemas import AdminBookingListResponse
+from app.core.dependencies import require_admin
+
+admin_router = APIRouter(prefix="/admin/bookings", tags=["Admin Bookings"], dependencies=[Depends(require_admin)])
+
+@admin_router.get("", response_model=AdminBookingListResponse)
+async def admin_list_bookings(
+    status: BookingStatus | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    category_id: uuid.UUID | None = None,
+    page: int = 1,
+    size: int = 50,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+):
+    """Admin list and filter bookings."""
+    items, total = await service.list_bookings_for_admin(
+        db, status, date_from, date_to, category_id, page, size
+    )
+    return AdminBookingListResponse(
+        items=[BookingListResponse.model_validate(b) for b in items],
+        total=total,
+        page=page,
+        size=size
+    )
+
+@admin_router.get("/{booking_id}", response_model=BookingResponse)
+async def admin_get_booking(
+    booking_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+):
+    """Admin get booking details."""
+    booking = await service.get_booking_or_404(booking_id, db)
+    return BookingResponse.model_validate(booking)
+
+
+@admin_router.post("/{booking_id}/cancel", response_model=BookingResponse)
+async def admin_cancel_booking(
+    booking_id: uuid.UUID,
+    body: CancelBookingRequest,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+):
+    """Admin cancels booking."""
+    booking = await service.cancel_booking_by_admin(booking_id, body.reason, db)
+    return BookingResponse.model_validate(booking)
+

@@ -1,9 +1,9 @@
 import uuid
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis.asyncio as aioredis
 
 from app.core.dependencies import get_current_user, get_db, get_redis, require_admin
 from app.pricing import service

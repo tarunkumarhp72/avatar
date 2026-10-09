@@ -1,0 +1,31 @@
+# Environments
+.env
+.env.*
+venv/
+env/
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Docs and Tests
+docs/
+test/
+tests/
+backend/tests/
+
+# Media / Uploads
+backend/uploads/
+uploads/
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store

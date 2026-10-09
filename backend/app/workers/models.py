@@ -39,6 +39,7 @@ class WorkerProfile(Base, TimestampMixin, UUIDPrimaryKey):
         Enum(WorkerLifecycleStatus, native_enum=False, length=50),
         default=WorkerLifecycleStatus.ONBOARDING,
         nullable=False,
+        index=True,
     )
     
     # We will use simple Float types for location as agreed previously
@@ -47,13 +48,13 @@ class WorkerProfile(Base, TimestampMixin, UUIDPrimaryKey):
     
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     profile_photo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    is_available: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_available: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     
     experience_years: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     rating: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     total_reviews: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    created_at = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
