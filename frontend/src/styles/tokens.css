@@ -1,15 +1,73 @@
 :root {
+  /* Brand Foundation Colors from AGENT.md */
   --color-primary: #1a2e5e;
+  --color-primary-dark: #111e3f;
+  --color-primary-light: #253e7a;
+  --color-primary-subtle: #f0f4fa;
+
   --color-accent: #e8a020;
+  --color-accent-hover: #d28e17;
+  --color-accent-active: #b87b12;
+  --color-accent-subtle: #fdf8ee;
+
   --color-success: #16a34a;
+  --color-success-subtle: #f0fdf4;
   --color-destructive: #dc2626;
+  --color-destructive-subtle: #fef2f2;
+
   --color-bg: #ffffff;
   --color-bg-muted: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-tint: #f1f4f9;
+
   --color-text: #1a1a1a;
+  --color-text-secondary: #4a5568;
   --color-text-muted: #6c757d;
-  
-  --font-sans: 'Inter', sans-serif;
-  
+  --color-text-light: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  --color-border: #e2e8f0;
+  --color-border-subtle: #edf2f7;
+  --color-border-focus: #1a2e5e;
+
+  /* Typography */
+  --font-sans: var(--font-sans, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+
+  /* 4px Spacing Grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Shape & Radii (8px standard card corner radius) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
   --radius-card: 8px;
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Elevation Shadows (Restrained, subtle dimensional depth) */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(26, 46, 94, 0.1), 0 8px 10px -6px rgba(26, 46, 94, 0.05);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 12px 24px -4px rgba(26, 46, 94, 0.12), 0 4px 8px -2px rgba(26, 46, 94, 0.06);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
