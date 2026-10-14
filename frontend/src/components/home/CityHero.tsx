@@ -1,303 +1,816 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ServicePin, { ServicePinProps } from './ServicePin';
+import { getCityData } from './cityGeometry';
 import styles from './CityHero.module.css';
 
-interface CityHeroProps {
-  initialCategories?: Array<{ id: string; name: string; slug: string }>;
-}
-
-const CITY_PINS: Array<Omit<ServicePinProps, 'isActive' | 'onClick'> & { categorySlug: string }> = [
-  {
-    id: 'pin-plumber',
-    icon: '🔧',
-    title: 'PLUMBER',
-    statusText: '3 Nearby',
-    statusType: 'green',
-    anchorColor: '#16a34a',
-    stemHeight: 52,
-    categorySlug: 'plumber',
-    x: 20.1,
-    y: 52,
-    animationDelay: '0s',
-  },
-  {
-    id: 'pin-mechanic',
-    icon: '🚗',
-    title: 'MECHANIC',
-    statusText: '2 Nearby',
-    statusType: 'green',
-    anchorColor: '#ef4444',
-    stemHeight: 44,
-    categorySlug: 'handyman',
-    x: 13.5,
-    y: 85,
-    animationDelay: '2.4s',
-  },
-  {
-    id: 'pin-electrician',
-    icon: '⚡',
-    title: 'ELECTRICIAN',
-    statusText: 'Available Now',
-    statusType: 'amber',
-    anchorColor: '#f0a02b',
-    stemHeight: 52,
-    categorySlug: 'electrician',
-    x: 71.8,
-    y: 48,
-    animationDelay: '0.6s',
-  },
-  {
-    id: 'pin-maid',
-    icon: '🧹',
-    title: 'MAID',
-    statusText: '4 Nearby',
-    statusType: 'green',
-    anchorColor: '#334155',
-    stemHeight: 48,
-    categorySlug: 'cleaning',
-    x: 86.4,
-    y: 34,
-    animationDelay: '1.2s',
-  },
-  {
-    id: 'pin-carpenter',
-    icon: '🔨',
-    title: 'CARPENTER',
-    statusType: 'neutral',
-    anchorColor: '#334155',
-    stemHeight: 50,
-    categorySlug: 'handyman',
-    x: 92.5,
-    y: 78,
-    animationDelay: '1.8s',
-  },
-];
-
-const DEFAULT_CATEGORIES = [
-  { slug: 'plumber', name: 'Plumber' },
-  { slug: 'electrician', name: 'Electrician' },
-  { slug: 'cleaning', name: 'House Cleaning' },
-  { slug: 'hvac', name: 'HVAC Repair' },
-  { slug: 'handyman', name: 'Handyman' },
-  { slug: 'gardening', name: 'Gardening' },
-  { slug: 'moving', name: 'Moving Services' },
-  { slug: 'pest', name: 'Pest Control' },
-];
-
-export default function CityHero({ initialCategories }: CityHeroProps) {
+export default function CityHero() {
   const router = useRouter();
-  const [jobQuery, setJobQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [activePinId, setActivePinId] = useState<string | null>('pin-electrician');
+  const [mode, setMode] = useState<'day' | 'night'>('day');
+  const [parallax, setParallax] = useState({ nx: 0, ny: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('plumber');
 
-  const categories = initialCategories && initialCategories.length > 0
-    ? initialCategories
-    : DEFAULT_CATEGORIES;
+  const city = useMemo(() => getCityData(), []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const queryParam = jobQuery.trim() ? `?q=${encodeURIComponent(jobQuery.trim())}` : '';
-    router.push(`/book/${selectedCategory}${queryParam}`);
+  const isNight = mode === 'night';
+  const t = isNight
+    ? {
+        bg: '#0b1226',
+        text: '#eef2ff',
+        card: '#131c38',
+        chip: 'rgba(19,28,56,0.92)',
+        border: '#2a3766',
+        sub: '#aab4d6',
+      }
+    : {
+        bg: '#ffffff',
+        text: '#0f1d3f',
+        card: '#ffffff',
+        chip: 'rgba(255,255,255,0.92)',
+        border: '#e6e3da',
+        sub: '#4b5578',
+      };
+
+  const accent = '#E59A1F';
+  const par = `translate(720 400) scale(1.04) translate(-720 -400) translate(${(-parallax.nx * 16).toFixed(1)} ${(-parallax.ny * 9).toFixed(1)})`;
+  const wf = isNight ? 'url(#glassNight)' : 'url(#glassDay)';
+  const offF = isNight ? 'url(#glassOff)' : 'none';
+  const wv = isNight ? '1;0.4;1' : '1;0.85;1';
+  const ho = isNight ? '0.9' : '0';
+  const overlay = isNight ? '0.34' : '0';
+  const cloudOp = isNight ? '0' : '0.6';
+  const sunOp = isNight ? '0' : '1';
+  const lampOp = isNight ? '0.95' : '0';
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = Math.round(((e.clientX - r.left) / r.width - 0.5) * 10) / 10;
+    const y = Math.round(((e.clientY - r.top) / r.height - 0.5) * 10) / 10;
+    if (x !== parallax.nx || y !== parallax.ny) {
+      setParallax({ nx: x, ny: y });
+    }
   };
 
-  const handlePinClick = (pinId: string, slug: string) => {
-    setActivePinId(pinId);
-    setSelectedCategory(slug);
+  const handleMouseLeave = () => {
+    setParallax({ nx: 0, ny: 0 });
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const qParam = searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : '';
+    router.push(`/book/${selectedCategory}${qParam}`);
   };
 
   return (
-    <>
-      <section className={styles.heroWrapper} aria-label="Interactive city services stage">
-        {/* Full-Bleed Isometric City Canvas */}
-        <div className={styles.cityCanvas} aria-hidden="true" />
+    <div
+      className={styles.cityHeroRoot}
+      style={{
+        backgroundColor: t.bg,
+        color: t.text,
+      }}
+    >
+      {/* Top Navigation Bar */}
+      <header className={styles.header}>
+        <Link href="/" className={styles.brandLogo} aria-label="Avatar Home">
+          AVATAR
+        </Link>
 
-        {/* Floating Top-Center Search Overlay */}
-        <div className={styles.searchOverlayContainer}>
-          <div className={styles.liveBadge} aria-label="System status: Live in your city">
-            <span className={styles.liveDot} aria-hidden="true" />
+        <nav className={styles.navLinks} aria-label="Primary Navigation">
+          <Link href="/#services" className={styles.navLink}>
+            Services
+          </Link>
+          <Link href="/#how-it-works" className={styles.navLink}>
+            How It Works
+          </Link>
+          <Link href="/#workers" className={styles.navLink}>
+            Workers
+          </Link>
+        </nav>
+
+        <div className={styles.headerActions}>
+          {/* Day / Night Theme Toggle */}
+          <button
+            type="button"
+            className={styles.themeToggleBtn}
+            onClick={() => setMode(isNight ? 'day' : 'night')}
+            aria-label={isNight ? 'Switch to light theme' : 'Switch to dark theme'}
+            style={{
+              border: `1.5px solid ${t.text}`,
+              backgroundColor: t.bg,
+              color: t.text,
+            }}
+          >
+            {isNight ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+              </svg>
+            )}
+          </button>
+
+          <Link
+            href="/provider/register"
+            className={styles.providerBtn}
+            style={{
+              border: `1.5px solid ${t.text}`,
+              backgroundColor: t.bg,
+              color: t.text,
+            }}
+          >
+            Become a Provider
+          </Link>
+
+          <Link href="/book/plumber" className={styles.bookNowBtn}>
+            Book Now
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Interactive Animated Stage */}
+      <section
+        className={styles.stageSection}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        aria-label="Interactive animated city stage"
+      >
+        <svg
+          viewBox="0 0 1440 800"
+          preserveAspectRatio="xMidYMid slice"
+          role="img"
+          aria-label="Animated isometric city with moving cars, walking people, traffic lights and swaying trees"
+          className={styles.citySvg}
+        >
+          <defs>
+            <linearGradient id="wallShade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0.1" />
+              <stop offset="0.6" stopColor="#1a1a3a" stopOpacity="0.04" />
+              <stop offset="1" stopColor="#1a1a3a" stopOpacity="0.34" />
+            </linearGradient>
+            <linearGradient id="glassDay" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#f1f9ff" />
+              <stop offset="0.5" stopColor="#a9cde6" />
+              <stop offset="1" stopColor="#6f9dbf" />
+            </linearGradient>
+            <linearGradient id="glassNight" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#fff0b8" />
+              <stop offset="1" stopColor="#ffc35a" />
+            </linearGradient>
+            <linearGradient id="glassOff" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#2d3656" />
+              <stop offset="1" stopColor="#1a2038" />
+            </linearGradient>
+            <radialGradient id="lampGlow">
+              <stop offset="0" stopColor="#fff1b0" stopOpacity="0.95" />
+              <stop offset="1" stopColor="#fff1b0" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="sunGlow" cx="0.2" cy="0.05" r="0.8">
+              <stop offset="0" stopColor="#fff4d2" stopOpacity="0.5" />
+              <stop offset="1" stopColor="#fff4d2" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="hazeTop" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#dcecfa" stopOpacity="0.65" />
+              <stop offset="1" stopColor="#dcecfa" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="hazeBot" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#0f1d3f" stopOpacity="0" />
+              <stop offset="1" stopColor="#0f1d3f" stopOpacity="0.28" />
+            </linearGradient>
+          </defs>
+
+          {/* Grass Background */}
+          <rect x="0" y="0" width="1440" height="800" fill="#86c45a" />
+
+          {/* Parallax Isometric City Elements */}
+          <g transform={par}>
+            {/* Base Blocks */}
+            {city.blocks.map((b, i) => (
+              <polygon key={`b-${i}`} points={b.p} fill="#d9d3c5" />
+            ))}
+
+            {/* Roads */}
+            {city.roads.map((r, i) => (
+              <polygon key={`r-${i}`} points={r.p} fill="#585d74" stroke="#4a4e63" strokeWidth="1" />
+            ))}
+
+            {/* Dashed Lane Markings */}
+            {city.dashes.map((d, i) => (
+              <line key={`d-${i}`} x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} stroke="#f3efe2" strokeWidth="1.6" strokeDasharray="9 11" opacity="0.85" />
+            ))}
+
+            {/* Pedestrian Crossings (Zebras) */}
+            {city.zebras.map((z, i) => (
+              <path key={`z-${i}`} d={z.d} fill="#f3efe2" opacity="0.8" />
+            ))}
+
+            {/* Lawns */}
+            {city.grass.map((g, i) => (
+              <polygon key={`g-${i}`} points={g.p} fill={g.c} />
+            ))}
+
+            {/* Plazas */}
+            {city.plazas.map((pz, i) => (
+              <polygon key={`pz-${i}`} points={pz.p} fill="#e6d7ad" />
+            ))}
+
+            {/* Moving Cars & Service Vans */}
+            {city.cars.map((c, i) => (
+              <g key={`car-${i}`} transform={c.tf}>
+                <g>
+                  <animateTransform attributeName="transform" type="translate" values={c.vals} keyTimes={c.kt} dur={`${c.dur}s`} begin={`${c.begin}s`} repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.04;0.96;1" dur={`${c.dur}s`} begin={`${c.begin}s`} repeatCount="indefinite" />
+                  <polygon points={c.cone} fill="rgba(255,240,175,0.42)" opacity={ho} />
+                  <polygon points={c.shadow} fill="rgba(10,15,30,0.24)" />
+                  <polygon points={c.bl} fill={c.cl} />
+                  <polygon points={c.br} fill={c.cr} />
+                  <polygon points={c.bl} fill="url(#wallShade)" />
+                  <polygon points={c.br} fill="url(#wallShade)" />
+                  <ellipse cx={c.w1x} cy={c.w1y} rx="2.8" ry="3.3" fill="#15151c" />
+                  <ellipse cx={c.w2x} cy={c.w2y} rx="2.8" ry="3.3" fill="#15151c" />
+                  <polygon points={c.bt} fill={c.ct} />
+                  <polygon points={c.kl} fill="#b7d3e6" />
+                  <polygon points={c.kr} fill="#8fb4cc" />
+                  <polygon points={c.kt2} fill={c.ct} />
+                  <circle cx={c.tlx} cy={c.tly} r="1.7" fill="#ff4b4b" />
+                  <circle cx={c.hx} cy={c.hy} r="18" fill="url(#lampGlow)" opacity={ho} />
+                  <circle cx={c.hx} cy={c.hy} r="1.8" fill="#fff6c8" />
+
+                  {c.isVan && (
+                    <g>
+                      <rect x="-58" y="-56" width="116" height="24" rx="12" fill="#ffffff" />
+                      <polygon points="-5,-32 5,-32 0,-25" fill="#ffffff" />
+                      <circle cx="-45" cy="-44" r="3.5" fill="#2fbf71" />
+                      <text x="5" y="-40" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f1d3f" fontFamily="Plus Jakarta Sans, system-ui, sans-serif">
+                        Plumber · 4 min
+                      </text>
+                    </g>
+                  )}
+                </g>
+              </g>
+            ))}
+
+            {/* Scene Elements: Trees, Lamps, Walkers, Fountains, Buildings, Houses */}
+            {city.scene.map((it, i) => {
+              if (it.isTree) {
+                return (
+                  <g key={`tree-${i}`}>
+                    <ellipse cx={it.cx} cy={it.by} rx="11" ry="5" fill="rgba(20,40,10,0.22)" />
+                    <rect x={it.tx} y={it.ty} width="4" height="20" fill="#7d5233" />
+                    <g>
+                      <animateTransform attributeName="transform" type="rotate" values={it.sw} dur={`${it.swd}s`} begin={`${it.swb}s`} repeatCount="indefinite" />
+                      <circle cx={it.cx} cy={it.cy} r={it.r} fill={it.canopyC} />
+                      <circle cx={it.hx} cy={it.hy} r={it.hr} fill={it.canopyC2} />
+                      <circle cx={it.sx} cy={it.sy} r={it.sr} fill="rgba(10,50,20,0.22)" />
+                    </g>
+                  </g>
+                );
+              }
+
+              if (it.isBldg) {
+                return (
+                  <g key={`bldg-${i}`}>
+                    <polygon points={it.shadow} fill="rgba(15,35,15,0.24)" />
+                    <polygon points={it.left} fill={it.cl} />
+                    <polygon points={it.right} fill={it.cr} />
+                    <polygon points={it.left} fill="url(#wallShade)" />
+                    <polygon points={it.right} fill="url(#wallShade)" />
+                    <path d={it.shop} fill="#2a3b50" />
+                    <path d={it.winL} fill={wf} stroke="rgba(20,25,45,0.55)" strokeWidth="0.5" />
+                    <path d={it.winLo} fill={offF} />
+                    <path d={it.winR} fill={wf} stroke="rgba(20,25,45,0.55)" strokeWidth="0.5">
+                      <animate attributeName="opacity" values={wv} dur={`${it.fd}s`} begin={`${it.fb}s`} repeatCount="indefinite" />
+                    </path>
+                    <path d={it.winRo} fill={offF} />
+                    <path d={it.awnA} fill={it.awnC} />
+                    <path d={it.awnB} fill="#f6f1e6" />
+                    <polygon points={it.cornL} fill="rgba(255,255,255,0.22)" />
+                    <polygon points={it.cornR} fill="rgba(255,255,255,0.1)" />
+                    <polygon points={it.door} fill="#46372f" />
+                    <path d={it.edge} stroke="rgba(255,255,255,0.4)" strokeWidth="1" fill="none" />
+                    <polygon points={it.top} fill={it.ct} stroke="rgba(0,0,0,0.12)" strokeWidth="0.8" strokeLinejoin="round" />
+                    <polygon points={it.topIn} fill={it.ctIn} />
+                    {it.tkw > 0 && <rect x={it.tkx} y={it.tky} width={it.tkw} height="9" fill="#8a6a4f" />}
+                    {it.tkw > 0 && <ellipse cx={it.tkcx} cy={it.tky} rx={it.tkr} ry="2.4" fill="#b08a68" />}
+                    {it.acl && <polygon points={it.acl} fill="#aeb4bd" />}
+                    {it.acr && <polygon points={it.acr} fill="#8f959f" />}
+                    {it.act && <polygon points={it.act} fill="#d7dbe0" />}
+                  </g>
+                );
+              }
+
+              if (it.isHouse) {
+                return (
+                  <g key={`house-${i}`}>
+                    <polygon points={it.shadow} fill="rgba(15,35,15,0.24)" />
+                    <polygon points={it.right} fill={it.cr} />
+                    <polygon points={it.left} fill={it.cl} />
+                    <polygon points={it.left} fill="url(#wallShade)" />
+                    <polygon points={it.right} fill="url(#wallShade)" />
+                    <path d={it.winL} fill={wf} stroke="rgba(20,25,45,0.55)" strokeWidth="0.5" />
+                    <path d={it.winLo} fill={offF} />
+                    <path d={it.winR} fill={wf} stroke="rgba(20,25,45,0.55)" strokeWidth="0.5" />
+                    <path d={it.winRo} fill={offF} />
+                    <polygon points={it.door} fill="#5a3f31" />
+                    <polygon points={it.gable} fill={it.cr} />
+                    <polygon points={it.roof} fill={it.roofC} stroke="rgba(0,0,0,0.14)" strokeWidth="0.8" strokeLinejoin="round" />
+                    <path d={it.edge} stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
+                  </g>
+                );
+              }
+
+              if (it.isFountain) {
+                return (
+                  <g key={`fountain-${i}`}>
+                    <ellipse cx={it.cx} cy={it.by} rx="30" ry="15" fill="#cbbf9f" />
+                    <ellipse cx={it.cx} cy={it.by} rx="25" ry="12.5" fill="#6cc2e8" />
+                    <ellipse cx={it.cx} cy={it.by} rx="4" ry="2" fill="none" stroke="#ffffff" strokeWidth="1.4">
+                      <animate attributeName="rx" values="4;24" dur="2.4s" repeatCount="indefinite" />
+                      <animate attributeName="ry" values="2;12" dur="2.4s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.9;0" dur="2.4s" repeatCount="indefinite" />
+                    </ellipse>
+                    <ellipse cx={it.cx} cy={it.by} rx="4" ry="2" fill="none" stroke="#ffffff" strokeWidth="1.4">
+                      <animate attributeName="rx" values="4;24" dur="2.4s" begin="-1.2s" repeatCount="indefinite" />
+                      <animate attributeName="ry" values="2;12" dur="2.4s" begin="-1.2s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.9;0" dur="2.4s" begin="-1.2s" repeatCount="indefinite" />
+                    </ellipse>
+                    <rect x={it.px} y={it.py} width="6" height="20" fill="#d8ccae" />
+                    <ellipse cx={it.cx} cy={it.py} rx="12" ry="6" fill="#bfe8f7" />
+                    <ellipse cx={it.cx} cy={it.sp} rx="3" ry="4" fill="#eefaff" opacity="0.9">
+                      <animate attributeName="ry" values="3;8;3" dur="1.2s" repeatCount="indefinite" />
+                    </ellipse>
+                  </g>
+                );
+              }
+
+              if (it.isLamp) {
+                return (
+                  <g key={`lamp-${i}`}>
+                    <ellipse cx={it.cx} cy={it.by} rx="4" ry="2" fill="rgba(10,20,10,0.25)" />
+                    <rect x={it.tx} y={it.ty} width="2" height="30" fill="#3a4050" />
+                    <circle cx={it.cx} cy={it.cy} r="3" fill="#fff3c4" />
+                  </g>
+                );
+              }
+
+              if (it.isLight) {
+                return (
+                  <g key={`light-${i}`}>
+                    <ellipse cx={it.cx} cy={it.by} rx="4" ry="2" fill="rgba(10,20,10,0.25)" />
+                    <rect x={it.tx} y={it.ty} width="2" height="30" fill="#2c303c" />
+                    <rect x={it.hx} y={it.hy} width="7" height="17" rx="2" fill="#1d212b" />
+                    <circle cx={it.cx} cy={it.r1} r="2.3" fill="#ff4b4b">
+                      <animate attributeName="opacity" calcMode="discrete" keyTimes="0;0.40625;0.5" values="0.18;0.18;1" dur="16s" begin="0s" repeatCount="indefinite" />
+                    </circle>
+                    <circle cx={it.cx} cy={it.r2} r="2.3" fill="#ffc53d">
+                      <animate attributeName="opacity" calcMode="discrete" keyTimes="0;0.40625;0.5" values="0.18;1;0.18" dur="16s" begin="0s" repeatCount="indefinite" />
+                    </circle>
+                    <circle cx={it.cx} cy={it.r3} r="2.3" fill="#3ddc84">
+                      <animate attributeName="opacity" calcMode="discrete" keyTimes="0;0.40625;0.5" values="1;0.18;0.18" dur="16s" begin="0s" repeatCount="indefinite" />
+                    </circle>
+                  </g>
+                );
+              }
+
+              if (it.isWalker) {
+                return (
+                  <g key={`walker-${i}`} transform={it.tf}>
+                    <g>
+                      <animateTransform attributeName="transform" type="translate" values={it.vals} dur={`${it.dur}s`} begin={`${it.begin}s`} repeatCount="indefinite" />
+                      <ellipse cx="0" cy="0" rx="6" ry="2.6" fill="rgba(10,20,10,0.26)" />
+                      <g>
+                        <animateTransform attributeName="transform" type="translate" values="0 0;0 -1.4;0 0" dur="0.5s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                        <g transform={`scale(${it.sc})`}>
+                          <g>
+                            <animateTransform attributeName="transform" type="scale" calcMode="discrete" values={it.fl} keyTimes="0;0.5" dur={`${it.dur}s`} begin={`${it.begin}s`} repeatCount="indefinite" />
+                            <g>
+                              <animateTransform attributeName="transform" type="rotate" values="-22 -1.7 -8;22 -1.7 -8;-22 -1.7 -8" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                              <rect x="-2.8" y="-8" width="2.2" height="7.6" rx="1" fill={it.pants} />
+                              <ellipse cx="-1.1" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
+                            </g>
+                            <rect x="-6.2" y="-16.5" width="3" height="7.5" rx="1" fill={it.bag} />
+                            <rect x="-1" y="-18.8" width="2" height="2.4" fill={it.skin} />
+                            <rect x="-3.6" y="-17.5" width="7.2" height="10.5" rx="2.4" fill={it.shirt} />
+                            <rect x="0.4" y="-17.5" width="3.2" height="10.5" rx="1.6" fill="rgba(0,0,0,0.16)" />
+                            <rect x="-3.6" y="-16.2" width="7.2" height="2.2" fill={it.vest} />
+                            <rect x="-2.6" y="-13" width="5.2" height="6" rx="1" fill={it.apron} />
+                            <g>
+                              <animateTransform attributeName="transform" type="rotate" values="22 1.7 -8;-22 1.7 -8;22 1.7 -8" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                              <rect x="0.6" y="-8" width="2.2" height="7.6" rx="1" fill={it.pants} />
+                              <ellipse cx="1.9" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
+                            </g>
+                            <g>
+                              <animateTransform attributeName="transform" type="rotate" values="20 -3.7 -16.5;-20 -3.7 -16.5;20 -3.7 -16.5" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                              <rect x="-5" y="-17" width="1.7" height="7.2" rx="0.8" fill={it.shirt} />
+                              <circle cx="-4.15" cy="-9.4" r="1.15" fill={it.skin} />
+                            </g>
+                            <g>
+                              <animateTransform attributeName="transform" type="rotate" values="-20 3.7 -16.5;20 3.7 -16.5;-20 3.7 -16.5" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                              <rect x="3.3" y="-17" width="1.7" height="7.2" rx="0.8" fill={it.shirt} />
+                              <circle cx="4.15" cy="-9.4" r="1.15" fill={it.skin} />
+                            </g>
+                            <rect x="-3.9" y="-22.2" width="2.4" height="3.6" rx="1.1" fill={it.hair} />
+                            <circle cx="0" cy="-21" r="3.6" fill={it.skin} />
+                            <circle cx="1.9" cy="-21.2" r="0.55" fill="#1a1a1a" />
+                            <path d="M-4 -21.6 A4 4 0 0 1 4 -21.6 Z" fill={it.hat} />
+                            <rect x="-4.4" y="-22.5" width="9.4" height="1.1" rx="0.5" fill={it.brim} />
+                          </g>
+                        </g>
+                      </g>
+                    </g>
+                  </g>
+                );
+              }
+
+              return null;
+            })}
+          </g>
+
+          {/* Drifting Clouds */}
+          <g opacity={cloudOp}>
+            <g>
+              <animateTransform attributeName="transform" type="translate" from="-320 0" to="1760 0" dur="150s" begin="-45s" repeatCount="indefinite" />
+              <ellipse cx="0" cy="90" rx="90" ry="22" fill="#ffffff" opacity="0.7" />
+              <ellipse cx="-40" cy="80" rx="48" ry="20" fill="#ffffff" opacity="0.7" />
+              <ellipse cx="38" cy="78" rx="52" ry="22" fill="#ffffff" opacity="0.7" />
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" from="-320 0" to="1760 0" dur="210s" begin="-120s" repeatCount="indefinite" />
+              <ellipse cx="0" cy="420" rx="110" ry="24" fill="#ffffff" opacity="0.5" />
+              <ellipse cx="-50" cy="408" rx="56" ry="22" fill="#ffffff" opacity="0.5" />
+              <ellipse cx="48" cy="406" rx="60" ry="24" fill="#ffffff" opacity="0.5" />
+            </g>
+            <g>
+              <animateTransform attributeName="transform" type="translate" from="-320 0" to="1760 0" dur="180s" begin="-10s" repeatCount="indefinite" />
+              <ellipse cx="0" cy="700" rx="100" ry="22" fill="#ffffff" opacity="0.45" />
+              <ellipse cx="-44" cy="690" rx="50" ry="20" fill="#ffffff" opacity="0.45" />
+            </g>
+          </g>
+
+          {/* Lighting & Atmos Shading */}
+          <rect x="0" y="0" width="1440" height="800" fill="url(#sunGlow)" opacity={sunOp} style={{ pointerEvents: 'none' }} />
+          <rect x="0" y="0" width="1440" height="240" fill="url(#hazeTop)" style={{ pointerEvents: 'none' }} />
+          <rect x="0" y="560" width="1440" height="240" fill="url(#hazeBot)" style={{ pointerEvents: 'none' }} />
+          <rect
+            x="0"
+            y="0"
+            width="1440"
+            height="800"
+            fill="#0b1740"
+            opacity={overlay}
+            style={{ mixBlendMode: 'multiply', pointerEvents: 'none', transition: 'opacity 0.8s ease' }}
+          />
+
+          {/* Streetlamp Glow Halos */}
+          <g transform={par} style={{ pointerEvents: 'none' }}>
+            {city.glows.map((gl, i) => (
+              <circle key={`gl-${i}`} cx={gl.cx} cy={gl.cy} r="40" fill="url(#lampGlow)" opacity={lampOp} style={{ mixBlendMode: 'screen' }} />
+            ))}
+          </g>
+        </svg>
+
+        {/* Floating Pin 1: Plumber */}
+        <div style={{ position: 'absolute', left: '20%', top: '41%', width: 0, height: 0 }}>
+          <div className={styles.pinbob}>
+            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={styles.pill}
+                onClick={() => router.push('/book/plumber')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  minHeight: '44px',
+                  padding: '0 16px',
+                  border: 0,
+                  borderRadius: '999px',
+                  backgroundColor: t.card,
+                  color: t.text,
+                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 2.7s6 6.3 6 10.6a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7z" />
+                </svg>
+                <span>PLUMBER</span>
+                <span style={{ fontWeight: 600, opacity: 0.65 }}>• 3 Nearby</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
+              </button>
+              <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
+              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #2fbf71' }}>
+                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #2fbf71' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Pin 2: Maid */}
+        <div style={{ position: 'absolute', left: '86%', top: '24%', width: 0, height: 0 }}>
+          <div className={styles.pinbobB}>
+            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={styles.pill}
+                onClick={() => router.push('/book/cleaning')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  minHeight: '44px',
+                  padding: '0 16px',
+                  border: 0,
+                  borderRadius: '999px',
+                  backgroundColor: t.card,
+                  color: t.text,
+                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+                </svg>
+                <span>MAID</span>
+                <span style={{ fontWeight: 600, opacity: 0.65 }}>• 4 Nearby</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
+              </button>
+              <div style={{ width: 2, height: 50, backgroundColor: t.text }} />
+              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
+                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Pin 3: Electrician */}
+        <div style={{ position: 'absolute', left: '72%', top: '37%', width: 0, height: 0 }}>
+          <div className={styles.pinbobC}>
+            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={styles.pill}
+                onClick={() => router.push('/book/electrician')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  minHeight: '44px',
+                  padding: '0 18px',
+                  border: 0,
+                  borderRadius: '999px',
+                  backgroundColor: accent,
+                  color: '#1b1b1b',
+                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.25)',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+                <span>ELECTRICIAN</span>
+                <span style={{ fontWeight: 600 }}>• Available Now</span>
+              </button>
+              <div style={{ width: 2, height: 54, backgroundColor: t.text }} />
+              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${accent}` }}>
+                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${accent}` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Pin 4: Mechanic */}
+        <div style={{ position: 'absolute', left: '13.5%', top: '75%', width: 0, height: 0 }}>
+          <div className={styles.pinbobB}>
+            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={styles.pill}
+                onClick={() => router.push('/book/handyman')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  minHeight: '44px',
+                  padding: '0 16px',
+                  border: 0,
+                  borderRadius: '999px',
+                  backgroundColor: t.card,
+                  color: t.text,
+                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                </svg>
+                <span>MECHANIC</span>
+                <span style={{ fontWeight: 600, opacity: 0.65 }}>• 2 Nearby</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
+              </button>
+              <div style={{ width: 2, height: 56, backgroundColor: t.text }} />
+              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #e5484d' }}>
+                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #e5484d' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Pin 5: Carpenter */}
+        <div style={{ position: 'absolute', left: '92%', top: '66%', width: 0, height: 0 }}>
+          <div className={styles.pinbob}>
+            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={styles.pill}
+                onClick={() => router.push('/book/handyman')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  minHeight: '44px',
+                  padding: '0 16px',
+                  border: 0,
+                  borderRadius: '999px',
+                  backgroundColor: t.card,
+                  color: t.text,
+                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 20l6-6M14 4l6 6-3 3-6-6zM8 10l6 6" />
+                </svg>
+                <span>CARPENTER</span>
+              </button>
+              <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
+              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
+                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Centered Search Card Overlay */}
+        <div className={styles.searchOverlay}>
+          <div
+            className={styles.liveBadge}
+            style={{
+              backgroundColor: t.chip,
+              color: t.text,
+            }}
+          >
+            <span className={styles.livedot} style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#e5484d' }} />
             <span>LIVE IN YOUR CITY</span>
           </div>
 
-          <div className={styles.searchCard}>
-            <form onSubmit={handleSearch}>
-              <div className={styles.searchUnifiedBox}>
-                <div className={styles.inputGroup}>
-                  <input
-                    type="text"
-                    className={styles.primaryInput}
-                    placeholder="What do you need help with?"
-                    value={jobQuery}
-                    onChange={(e) => setJobQuery(e.target.value)}
-                    aria-label="What do you need help with?"
-                  />
-                  <div className={styles.subInputHint}>
-                    (e.g. leaking faucet, bad wiring)
-                  </div>
-                </div>
+          <div
+            className={styles.searchBoxCard}
+            style={{
+              backgroundColor: t.card,
+            }}
+          >
+            <form onSubmit={handleSearchSubmit}>
+              <div
+                className={styles.searchInputsRow}
+                style={{
+                  border: `1.5px solid ${t.text}`,
+                }}
+              >
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="What do you need help with? (e.g. leaking faucet, bad wiring)"
+                  aria-label="What do you need help with?"
+                  style={{ color: t.text }}
+                />
 
-                <div className={styles.boxDivider} aria-hidden="true" />
+                <select
+                  className={styles.categorySelect}
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  aria-label="Service category"
+                  style={{
+                    borderLeft: `1px solid ${t.border}`,
+                    color: t.text,
+                  }}
+                >
+                  <option value="cleaning">House Cleaning</option>
+                  <option value="plumber">Plumbing</option>
+                  <option value="electrician">Electrical</option>
+                  <option value="handyman">Carpentry & Handyman</option>
+                  <option value="hvac">HVAC Repair</option>
+                </select>
 
-                <div className={styles.categoryGroup}>
-                  <select
-                    className={styles.categorySelect}
-                    value={selectedCategory}
-                    onChange={(e) => {
-                      setSelectedCategory(e.target.value);
-                      const matchingPin = CITY_PINS.find((p) => p.categorySlug === e.target.value);
-                      if (matchingPin) setActivePinId(matchingPin.id);
-                    }}
-                    aria-label="Category selector"
-                  >
-                    <option value="">Category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.slug} value={cat.slug}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  <svg
-                    className={styles.selectChevron}
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </div>
-
-                <button type="submit" className={styles.searchButton} aria-label="Search">
+                <button type="submit" className={styles.searchSubmitBtn}>
                   Search
                 </button>
               </div>
             </form>
 
-            <p className={styles.searchSubtitle}>
+            <div className={styles.searchSubtitle} style={{ color: t.sub }}>
               Describe your job • Connect with nearby workers • Book instantly.
-            </p>
+            </div>
           </div>
         </div>
-
-        {/* Floating "Upside Tags" (Service Pins over Buildings) */}
-        {CITY_PINS.map((pin) => (
-          <ServicePin
-            key={pin.id}
-            id={pin.id}
-            icon={pin.icon}
-            title={pin.title}
-            statusText={pin.statusText}
-            statusType={pin.statusType}
-            anchorColor={pin.anchorColor}
-            stemHeight={pin.stemHeight}
-            x={pin.x}
-            y={pin.y}
-            animationDelay={pin.animationDelay}
-            isActive={activePinId === pin.id}
-            onClick={() => handlePinClick(pin.id, pin.categorySlug)}
-          />
-        ))}
       </section>
 
-      {/* Docked Bottom Trust & Scroll Bar */}
-      <div className={styles.bottomTrustBar} role="region" aria-label="Trust and navigation bar">
-        {/* Left: Trade Tool Icons */}
-        <div className={styles.toolIconsGroup} aria-label="Trade icons">
-          {/* Wrench in circle */}
-          <span className={styles.toolIconItem} title="Plumbing">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-            </svg>
-          </span>
-
-          {/* Crossed wrenches */}
-          <span className={styles.toolIconItem} title="Maintenance">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 2l-4.5 4.5 3 3L21 5c.5-.5.5-1.5 0-2l-1-1c-.5-.5-1.5-.5-2 0z" />
-              <path d="M13.5 6.5L3 17v4h4L17.5 10.5" />
-              <path d="M6 2l4.5 4.5-3 3L3 5c-.5-.5-.5-1.5 0-2l1-1c.5-.5 1.5-.5 2 0z" />
-              <path d="M10.5 6.5L21 17v4h-4L6.5 10.5" />
-            </svg>
-          </span>
-
-          {/* Screwdriver and wrench */}
-          <span className={styles.toolIconItem} title="Repairs">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 15 6 6m-6-6a4 4 0 0 1-5.66-5.66L15 3l4 4-6.34 6.34" />
-              <path d="M5 19l6-6" />
-              <path d="M2 22l3-3" />
-            </svg>
-          </span>
-
-          {/* Verified Worker ID Card */}
-          <span className={styles.toolIconItem} title="Verified Providers">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="16" rx="3" />
-              <circle cx="9" cy="10" r="2.5" />
-              <path d="M15 8h2M15 12h2" />
-              <path d="M6 16c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" />
-              <circle cx="17.5" cy="16.5" r="3.5" fill="#16a34a" stroke="#ffffff" strokeWidth="1.5" />
-              <path d="m16 16.5 1 1 2-2" stroke="#ffffff" strokeWidth="1.5" />
-            </svg>
-          </span>
+      {/* Docked Bottom Bar: Trade Tools, Scroll Indicator, Trust Metrics */}
+      <footer
+        className={styles.bottomBar}
+        style={{
+          borderTop: `1px solid ${t.border}`,
+        }}
+      >
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 2.7s6 6.3 6 10.6a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7z" />
+          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+          </svg>
         </div>
 
-        {/* Center: Scroll to discover more indicator */}
-        <a href="#how-it-works" className={styles.scrollIndicator} aria-label="Scroll down to discover more">
-          <div className={styles.mouseIcon} aria-hidden="true">
-            <div className={styles.mouseWheel} />
-          </div>
-          <span>Scroll to discover more</span>
-          <span aria-hidden="true">↓</span>
+        <a
+          href="#services"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontSize: '14px',
+            fontWeight: 600,
+            color: 'inherit',
+            textDecoration: 'none',
+          }}
+        >
+          <svg className={styles.nudge} width="16" height="26" viewBox="0 0 16 26" fill="none" stroke={t.text} strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+            <rect x="1" y="1" width="14" height="24" rx="7" />
+            <path d="M8 6v5" />
+          </svg>
+          <span>Scroll to discover more ↓</span>
         </a>
 
-        {/* Right: Trust Metrics */}
-        <div className={styles.trustMetricsGroup}>
-          <div className={styles.metricItem}>
-            <span className={styles.metricIconWrap} aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" strokeWidth="1">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-            </span>
-            <div className={styles.metricTextGroup}>
-              <span className={styles.metricBold}>15 Min</span>
-              <span className={styles.metricSub}>Avg Arrival</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={accent} stroke={accent} strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+            <div style={{ lineHeight: 1.15 }}>
+              <div style={{ fontSize: '14px', fontWeight: 800 }}>15 Min</div>
+              <div style={{ fontSize: '12px', fontWeight: 500, color: t.sub }}>Avg Arrival</div>
             </div>
           </div>
 
-          <div className={styles.metricItem}>
-            <span className={styles.metricIconWrap} aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#0d9488" stroke="#0f766e" strokeWidth="1">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="m9 12 2 2 4-4" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <div className={styles.metricTextGroup}>
-              <span className={styles.metricBold}>KYC</span>
-              <span className={styles.metricSub}>Verifieds</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2a8f5b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+            <div style={{ lineHeight: 1.15 }}>
+              <div style={{ fontSize: '14px', fontWeight: 800 }}>KYC</div>
+              <div style={{ fontSize: '12px', fontWeight: 500, color: t.sub }}>Verifieds</div>
             </div>
           </div>
 
-          <div className={styles.metricItem}>
-            <span className={styles.metricIconWrap} aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" strokeWidth="1">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-            </span>
-            <div className={styles.metricTextGroup}>
-              <span className={styles.metricBold}>4.9/5</span>
-              <span className={styles.metricSub}>Rating</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={accent} stroke={accent} strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            <div style={{ lineHeight: 1.15 }}>
+              <div style={{ fontSize: '14px', fontWeight: 800 }}>4.9/5</div>
+              <div style={{ fontSize: '12px', fontWeight: 500, color: t.sub }}>Rating</div>
             </div>
           </div>
         </div>
-      </div>
-    </>
+      </footer>
+    </div>
   );
 }

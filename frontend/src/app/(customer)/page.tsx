@@ -1,4 +1,5 @@
 import React from 'react';
+import CityHero from '@/components/home/CityHero';
 
 export const metadata = {
   title: 'Avatar — Find Local Services Near You',
@@ -6,30 +7,5 @@ export const metadata = {
 };
 
 export default function HomePage() {
-  return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        position: 'relative',
-        margin: 0,
-        padding: 0,
-        backgroundColor: '#faf9f5',
-      }}
-    >
-      <iframe
-        src="/avatar-city-hero.html"
-        title="Avatar — Interactive Animated City"
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-          display: 'block',
-          overflow: 'hidden',
-        }}
-      />
-    </div>
-  );
+  return <CityHero />;
 }
-
