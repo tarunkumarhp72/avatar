@@ -1,0 +1,126 @@
+.pinWrapper {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  user-select: none;
+  transition: z-index 0.2s ease;
+}
+
+.pinWrapper:hover,
+.pinWrapper.active {
+  z-index: 30;
+}
+
+.pinCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 1px solid #2d3748;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1a202c;
+  white-space: nowrap;
+  animation: pinFloat 3.2s ease-in-out infinite;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pinWrapper:hover .pinCard,
+.pinWrapper.active .pinCard {
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.pinCard.amberHighlight {
+  background-color: #f0a02b;
+  border-color: #c98218;
+  color: #111827;
+}
+
+.pinIcon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.pinTitle {
+  letter-spacing: 0.04em;
+}
+
+.pinDivider {
+  color: inherit;
+  opacity: 0.6;
+  margin: 0 1px;
+}
+
+.pinStatusGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.statusDotGreen {
+  background-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+}
+
+.statusDotAmber {
+  background-color: #111827;
+  opacity: 0.8;
+}
+
+.connectorStem {
+  width: 1.5px;
+  background-color: #334155;
+  position: relative;
+}
+
+.anchorDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  position: relative;
+  top: -1px;
+  transition: transform var(--transition-fast);
+}
+
+.pinWrapper:hover .anchorDot,
+.pinWrapper.active .anchorDot {
+  transform: scale(1.3);
+}
+
+@keyframes pinFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@media (max-width: 640px) {
+  .pinCard {
+    padding: 3px 8px;
+    font-size: 0.7rem;
+  }
+  .pinIcon {
+    font-size: 0.8rem;
+  }
+}

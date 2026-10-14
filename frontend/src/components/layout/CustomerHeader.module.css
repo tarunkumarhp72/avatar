@@ -11,41 +11,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
+  height: 56px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
   text-decoration: none;
-}
-
-.logoIcon {
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-}
-
-.brandTextGroup {
-  display: flex;
-  flex-direction: column;
 }
 
 .brandName {
   font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.brandTag {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 800;
+  color: #0e1b38;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 
 .navLinks {
@@ -56,16 +36,16 @@
 }
 
 .navLink {
-  color: var(--color-text-secondary);
+  color: #334155;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   transition: color var(--transition-fast);
   padding: var(--space-2) 0;
 }
 
 .navLink:hover {
-  color: var(--color-primary);
+  color: #0e1b38;
 }
 
 .actionsGroup {
@@ -74,25 +54,47 @@
   gap: var(--space-3);
 }
 
-.loginBtn {
+.providerBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0 var(--space-4);
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  background-color: var(--color-primary-subtle);
-  border: 1px solid rgba(26, 46, 94, 0.15);
-  border-radius: var(--radius-md);
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1a202c;
+  background-color: transparent;
+  border: 1px solid #1a202c;
+  border-radius: 8px;
   text-decoration: none;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
-.loginBtn:hover {
-  background-color: var(--color-primary);
-  color: #ffffff;
+.providerBtn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.bookNowBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a202c;
+  background-color: #e59b2b;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.bookNowBtn:hover {
+  background-color: #d68f23;
+  transform: translateY(-1px);
 }
 
 .mobileMenuBtn {
@@ -137,4 +139,20 @@
 .mobileNavLink:hover {
   background-color: var(--color-bg-muted);
   color: var(--color-primary);
+}
+
+.mobileNavLinkCta {
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-accent);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.mobileNavLinkCta:hover {
+  background-color: var(--color-accent-hover);
 }

@@ -21,7 +21,7 @@ export default function WorkerDashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <div className="card" style={{ textAlign: 'center' }}>
-          <h3 style={{ color: 'var(--color-text-muted)', margin: '0 0 0.5rem 0' }}>Today's Jobs</h3>
+          <h3 style={{ color: 'var(--color-text-muted)', margin: '0 0 0.5rem 0' }}>Today&apos;s Jobs</h3>
           <p style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0, color: 'var(--color-primary)' }}>3</p>
         </div>
         <div className="card" style={{ textAlign: 'center' }}>

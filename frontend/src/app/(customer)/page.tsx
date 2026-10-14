@@ -1,6 +1,6 @@
 import React from 'react';
 import { getCategories, Category } from '@/lib/api/categories';
-import HomeView from '@/components/home/HomeView';
+import CityHero from '@/components/home/CityHero';
 
 export const metadata = {
   title: 'Avatar — Find Local Services Near You',
@@ -23,12 +23,12 @@ export default async function HomePage() {
       { id: '2', name: 'Electrician', slug: 'electrician', icon: '⚡', description: '', is_active: true, created_at: '' },
       { id: '3', name: 'House Cleaning', slug: 'cleaning', icon: '🧹', description: '', is_active: true, created_at: '' },
       { id: '4', name: 'HVAC Repair', slug: 'hvac', icon: '❄️', description: '', is_active: true, created_at: '' },
-      { id: '5', name: 'Handyman', slug: 'handyman', icon: '👨‍🔧', description: '', is_active: true, created_at: '' },
+      { id: '5', name: 'Handyman & Carpentry', slug: 'handyman', icon: '👨‍🔧', description: '', is_active: true, created_at: '' },
       { id: '6', name: 'Gardening', slug: 'gardening', icon: '🌱', description: '', is_active: true, created_at: '' },
       { id: '7', name: 'Moving Services', slug: 'moving', icon: '🚚', description: '', is_active: true, created_at: '' },
       { id: '8', name: 'Pest Control', slug: 'pest', icon: '🐛', description: '', is_active: true, created_at: '' },
     ];
   }
 
-  return <HomeView initialCategories={categories} />;
+  return <CityHero initialCategories={categories} />;
 }

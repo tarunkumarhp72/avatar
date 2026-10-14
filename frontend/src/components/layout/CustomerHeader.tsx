@@ -11,38 +11,12 @@ export default function CustomerHeader() {
     <header className={styles.header}>
       <div className={`container ${styles.navContainer}`}>
         <Link href="/" className={styles.brand} aria-label="Avatar Local Services Marketplace">
-          <svg
-            className={styles.logoIcon}
-            viewBox="0 0 36 36"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <rect width="36" height="36" rx="8" fill="#1a2e5e" />
-            <path
-              d="M18 7L8 12V19.5C8 25.5 12.3 31.1 18 32.5C23.7 31.1 28 25.5 28 19.5V12L18 7Z"
-              stroke="#e8a020"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M13.5 19.5L16.5 22.5L22.5 16.5"
-              stroke="#ffffff"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <div className={styles.brandTextGroup}>
-            <span className={styles.brandName}>Avatar</span>
-            <span className={styles.brandTag}>Local Marketplace</span>
-          </div>
+          <span className={styles.brandName}>AVATAR</span>
         </Link>
 
         <ul className={styles.navLinks}>
           <li>
-            <Link href="/#categories" className={styles.navLink}>
+            <Link href="/#services" className={styles.navLink}>
               Services
             </Link>
           </li>
@@ -52,15 +26,18 @@ export default function CustomerHeader() {
             </Link>
           </li>
           <li>
-            <Link href="/#trust" className={styles.navLink}>
-              Trust & Standards
+            <Link href="/#workers" className={styles.navLink}>
+              Workers
             </Link>
           </li>
         </ul>
 
         <div className={styles.actionsGroup}>
-          <Link href="/login" className={styles.loginBtn}>
-            Login
+          <Link href="/provider/register" className={styles.providerBtn}>
+            Become a Provider
+          </Link>
+          <Link href="/book/plumber" className={styles.bookNowBtn}>
+            Book Now
           </Link>
 
           <button
@@ -87,7 +64,7 @@ export default function CustomerHeader() {
         <nav className={styles.mobileDropdown} aria-label="Mobile navigation">
           <div className="container" style={{ display: 'flex', flexDirection: 'column' }}>
             <Link
-              href="/#categories"
+              href="/#services"
               className={styles.mobileNavLink}
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -101,18 +78,25 @@ export default function CustomerHeader() {
               How It Works
             </Link>
             <Link
-              href="/#trust"
+              href="/#workers"
               className={styles.mobileNavLink}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Trust & Standards
+              Workers
             </Link>
             <Link
-              href="/login"
+              href="/provider/register"
               className={styles.mobileNavLink}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Login to Account
+              Become a Provider
+            </Link>
+            <Link
+              href="/book/plumber"
+              className={styles.mobileNavLinkCta}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Book Now
             </Link>
           </div>
         </nav>
