@@ -2,8 +2,9 @@
 
 import React, { useState, useId } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Category } from '@/lib/api/categories';
 import { getCategoryIcon, getCategoryDescription } from './CategoryIcons';
 import styles from './HomeView.module.css';
@@ -12,11 +13,82 @@ interface HomeViewProps {
   initialCategories: Category[];
 }
 
+interface ProfessionGear {
+  title: string;
+  gear: string;
+  image: string;
+  accent: string;
+}
+
+const PROFESSIONS: Record<string, ProfessionGear> = {
+  plumber: {
+    title: 'Master Plumber',
+    gear: 'Yellow safety hard hat, turquoise workwear & chrome pipe wrench',
+    image: '/mascot/plumber.jpg',
+    accent: '#0284c7',
+  },
+  electrician: {
+    title: 'Certified Electrician',
+    gear: 'Electrician helmet, insulated screwdriver & warm illuminated bulb',
+    image: '/mascot/electrician.jpg',
+    accent: '#eab308',
+  },
+  cleaning: {
+    title: 'House Cleaning Specialist',
+    gear: 'Teal housekeeping apron, spray bottle & microfiber cloth',
+    image: '/mascot/cleaning.jpg',
+    accent: '#0d9488',
+  },
+  hvac: {
+    title: 'HVAC Technician',
+    gear: 'Utility technician vest, pressure gauges & diagnostic tools',
+    image: '/mascot/hvac.jpg',
+    accent: '#3b82f6',
+  },
+  handyman: {
+    title: 'General Handyman',
+    gear: 'Classic denim overalls, tool belt & heavy-duty toolbox',
+    image: '/mascot/handyman.jpg',
+    accent: '#d97706',
+  },
+  gardening: {
+    title: 'Landscape & Garden Pro',
+    gear: 'Garden work apron, gloves, potted plant & hand trowel',
+    image: '/mascot/gardening.jpg',
+    accent: '#16a34a',
+  },
+  moving: {
+    title: 'Moving & Transport Specialist',
+    gear: 'Mover uniform cap, polo shirt & heavy-duty cargo crate',
+    image: '/mascot/moving.jpg',
+    accent: '#2563eb',
+  },
+  pest: {
+    title: 'Pest Control Inspector',
+    gear: 'Protective exterminator jumpsuit & digital inspection scanner',
+    image: '/mascot/pest.jpg',
+    accent: '#854d0e',
+  },
+};
+
 export default function HomeView({ initialCategories }: HomeViewProps) {
   const router = useRouter();
   const searchInputId = useId();
   const shouldReduceMotion = useReducedMotion();
-  const [searchQuery, setSearchQuery] = useState('');
+
+  // Active Category & Mascot State (Plumber by default)
+  const [activeSlug, setActiveSlug] = useState<string>('plumber');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const activeCategory =
+    initialCategories.find((cat) => cat.slug === activeSlug) ||
+    initialCategories[0] || {
+      id: '1',
+      name: 'Plumber',
+      slug: 'plumber',
+    };
+
+  const currentProfession = PROFESSIONS[activeCategory.slug] || PROFESSIONS['plumber'];
 
   // Filter categories by search query
   const filteredCategories = initialCategories.filter((cat) => {
@@ -37,7 +109,7 @@ export default function HomeView({ initialCategories }: HomeViewProps) {
       return;
     }
 
-    // Check if query matches a known category slug or name
+    // Direct match check
     const exactMatch = initialCategories.find(
       (cat) =>
         cat.slug.toLowerCase() === query ||
@@ -46,62 +118,31 @@ export default function HomeView({ initialCategories }: HomeViewProps) {
     );
 
     if (exactMatch) {
+      setActiveSlug(exactMatch.slug);
       router.push(`/book/${exactMatch.slug}`);
     } else {
-      // Scroll down to filtered list
       const el = document.getElementById('categories');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  const handleQuickPillClick = (term: string) => {
-    setSearchQuery(term);
-    const match = initialCategories.find(
-      (cat) =>
-        cat.name.toLowerCase().includes(term.toLowerCase()) ||
-        cat.slug.toLowerCase().includes(term.toLowerCase())
-    );
-    if (match) {
-      router.push(`/book/${match.slug}`);
-    } else {
-      const el = document.getElementById('categories');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }
+  const handleQuickPillClick = (slug: string) => {
+    setActiveSlug(slug);
+    const el = document.getElementById('categories');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Motion animation variants (respecting reduced motion)
-  const containerVariants = {
-    hidden: { opacity: shouldReduceMotion ? 1 : 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: shouldReduceMotion ? 0 : 0.06,
-        delayChildren: shouldReduceMotion ? 0 : 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: {
-      opacity: shouldReduceMotion ? 1 : 0,
-      y: shouldReduceMotion ? 0 : 16,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.35,
-        ease: 'easeOut' as const,
-      },
-    },
+  const handleCategorySelect = (slug: string) => {
+    setActiveSlug(slug);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      {/* 1. Asymmetric Editorial Hero Section */}
+      {/* 1. Hero Section with Interactive 3D Service Mascot */}
       <section className={styles.hero}>
         <div className="container">
           <div className={styles.heroGrid}>
+            {/* Left Column: Heading, Subtext & Search */}
             <div className={styles.heroContent}>
               <div className={styles.trustEyebrow}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
@@ -111,12 +152,12 @@ export default function HomeView({ initialCategories }: HomeViewProps) {
               </div>
 
               <h1 className={styles.heroTitle}>
-                Find Local Services <br />
-                <span className={styles.accentWord}>near you</span>
+                Your home, <br />
+                <span className={styles.accentWord}>handled.</span>
               </h1>
 
               <p className={styles.heroSubtitle}>
-                Book trusted professionals for all your home needs, instantly.
+                Trusted local pros, one friendly place.
               </p>
 
               {/* Main Search Conversion Point */}
@@ -185,169 +226,160 @@ export default function HomeView({ initialCategories }: HomeViewProps) {
                 </motion.button>
               </form>
 
+              {/* Trust line beneath search */}
+              <div className={styles.trustBarUnderSearch}>
+                <span>✓ Verified background checks</span>
+                <span className={styles.trustDot}>•</span>
+                <span>Upfront transparent pricing</span>
+                <span className={styles.trustDot}>•</span>
+                <span>Guaranteed satisfaction</span>
+              </div>
+
               {/* Quick Suggestion Pills */}
               <div className={styles.quickPillsWrapper}>
-                <span className={styles.quickPillsLabel}>Popular:</span>
-                {['Plumber', 'Electrician', 'House Cleaning', 'HVAC Repair', 'Handyman'].map((term) => (
+                <span className={styles.quickPillsLabel}>Switch Mascot:</span>
+                {[
+                  { label: 'Plumber', slug: 'plumber' },
+                  { label: 'Electrician', slug: 'electrician' },
+                  { label: 'House Cleaning', slug: 'cleaning' },
+                  { label: 'HVAC Repair', slug: 'hvac' },
+                  { label: 'Handyman', slug: 'handyman' },
+                ].map((item) => (
                   <button
-                    key={term}
+                    key={item.slug}
                     type="button"
-                    onClick={() => handleQuickPillClick(term)}
+                    onClick={() => handleQuickPillClick(item.slug)}
                     className={styles.quickPill}
+                    style={
+                      activeSlug === item.slug
+                        ? { background: 'var(--color-accent)', color: '#1a1a1a', borderColor: 'var(--color-accent)', fontWeight: 700 }
+                        : {}
+                    }
                   >
-                    {term}
+                    {item.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Right Column: Dimensional Platform Preview */}
-            <div className={styles.heroCard}>
-              <div className={styles.heroCardHeader}>
-                <span className={styles.heroCardTitle}>Avatar Platform Standards</span>
-                <div className={styles.heroCardStatus}>
-                  <span className={styles.statusPip} />
-                  <span>Verified Network</span>
+            {/* Right Column: 3D Interactive Mascot Stage */}
+            <div className={styles.mascotStage}>
+              <div className={styles.mascotViewport}>
+                <div className={styles.mascotGlowBackdrop} />
+
+                {/* Animated Mascot Character Switcher */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeCategory.slug}
+                    initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 1.05, y: -10 }}
+                    transition={{ duration: 0.28, ease: 'easeOut' }}
+                    style={{ width: '100%', height: '100%', position: 'relative' }}
+                  >
+                    <Image
+                      src={currentProfession.image}
+                      alt={`Avatar 3D mascot in ${currentProfession.title} uniform`}
+                      width={440}
+                      height={440}
+                      priority
+                      className={styles.mascotImage}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Top Badge: Active Trade */}
+                <div className={styles.mascotTopBadge}>
+                  <span className={styles.mascotActiveDot} />
+                  <span>{currentProfession.title}</span>
+                </div>
+
+                {/* Bottom Overlay Card */}
+                <div className={styles.mascotBottomCard}>
+                  <div className={styles.mascotCardDetails}>
+                    <span className={styles.mascotCardName}>{activeCategory.name} Gear</span>
+                    <span className={styles.mascotCardGear}>{currentProfession.gear}</span>
+                  </div>
+                  <Link href={`/book/${activeCategory.slug}`} className={styles.mascotCardAction}>
+                    <span>Book Pro &rarr;</span>
+                  </Link>
                 </div>
               </div>
 
-              <ul className={styles.heroFeatureList}>
-                <li className={styles.heroFeatureItem}>
-                  <div className={styles.featureIconWrap}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <strong style={{ display: 'block', color: '#ffffff' }}>Identity & Background Checked</strong>
-                    <span style={{ fontSize: '0.825rem', color: 'rgba(255,255,255,0.75)' }}>
-                      Every provider passes KYC verification before taking jobs.
-                    </span>
-                  </div>
-                </li>
-
-                <li className={styles.heroFeatureItem}>
-                  <div className={styles.featureIconWrap}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <strong style={{ display: 'block', color: '#ffffff' }}>Transparent Upfront Pricing</strong>
-                    <span style={{ fontSize: '0.825rem', color: 'rgba(255,255,255,0.75)' }}>
-                      Clear hourly estimates and quotes with zero surprise fees.
-                    </span>
-                  </div>
-                </li>
-
-                <li className={styles.heroFeatureItem}>
-                  <div className={styles.featureIconWrap}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <strong style={{ display: 'block', color: '#ffffff' }}>Direct Local Dispatch</strong>
-                    <span style={{ fontSize: '0.825rem', color: 'rgba(255,255,255,0.75)' }}>
-                      Connect immediately with nearby specialists ready to visit.
-                    </span>
-                  </div>
-                </li>
-              </ul>
-
-              <div className={styles.heroCardFooter}>
-                <span>Two-Sided Protection</span>
-                <span style={{ color: 'var(--color-accent)' }}>100% Quality Assurance</span>
+              <div className={styles.mascotHelperHint}>
+                <span>💡 Click any category below to switch mascot profession & gear</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. Service Categories Section (All 8 Categories Preserved) */}
+      {/* 2. Interactive Service Categories (Immediately below hero) */}
       <section id="categories" className={styles.categoriesSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionEyebrow}>Service Directory</span>
-            <h2 className={styles.sectionTitle}>Explore All Service Categories</h2>
+            <span className={styles.sectionEyebrow}>Select a Trade</span>
+            <h2 className={styles.sectionTitle}>Explore Service Categories</h2>
             <p className={styles.sectionSubtitle}>
-              Select a specialized category to connect directly with verified trade specialists in your area.
+              Click a card to equip the mascot and preview specialized services, or proceed to instant booking.
             </p>
           </div>
 
-          {searchQuery && (
-            <div className={styles.searchStateBanner}>
-              <span>
-                Showing <strong>{filteredCategories.length}</strong> {filteredCategories.length === 1 ? 'service' : 'services'} matching &ldquo;{searchQuery}&rdquo;
-              </span>
-              <button
-                type="button"
-                className={styles.clearSearchBtn}
-                onClick={() => setSearchQuery('')}
-              >
-                Reset search
-              </button>
-            </div>
-          )}
+          <div className={styles.categoriesGrid}>
+            {filteredCategories.map((cat) => {
+              const icon = getCategoryIcon(cat.slug, cat.icon);
+              const description = getCategoryDescription(cat.slug, cat.description);
+              const isSelected = activeSlug === cat.slug;
 
-          {filteredCategories.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem', margin: '1rem 0' }}>
-              <p style={{ fontSize: '1.1rem', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
-                No services found matching &ldquo;{searchQuery}&rdquo;.
-              </p>
-              <button
-                type="button"
-                className="base-button btn-primary"
-                onClick={() => setSearchQuery('')}
-              >
-                View all categories
-              </button>
-            </div>
-          ) : (
-            <motion.div
-              className={styles.categoriesGrid}
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-50px' }}
-            >
-              {filteredCategories.map((cat) => {
-                const icon = getCategoryIcon(cat.slug, cat.icon);
-                const description = getCategoryDescription(cat.slug, cat.description);
+              return (
+                <div
+                  key={cat.id}
+                  onClick={() => handleCategorySelect(cat.slug)}
+                  className={`${styles.categoryCard} ${isSelected ? styles.categoryCardActive : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleCategorySelect(cat.slug);
+                    }
+                  }}
+                  aria-pressed={isSelected}
+                >
+                  {isSelected && (
+                    <span className={styles.activeMascotBadge}>
+                      Mascot Equipped
+                    </span>
+                  )}
 
-                return (
-                  <motion.div
-                    key={cat.id}
-                    variants={itemVariants}
-                    style={{ display: 'flex' }}
-                  >
+                  <div className={styles.categoryIconBadge}>
+                    {icon}
+                  </div>
+
+                  <h3 className={styles.categoryName}>
+                    {cat.name}
+                  </h3>
+
+                  <p className={styles.categoryDesc}>
+                    {description}
+                  </p>
+
+                  <div className={styles.cardBottomRow}>
+                    <span style={{ fontSize: '0.78rem', color: isSelected ? 'var(--color-accent)' : 'var(--color-text-muted)', fontWeight: 600 }}>
+                      {isSelected ? '✓ Active Profession' : 'Click to equip'}
+                    </span>
                     <Link
                       href={`/book/${cat.slug}`}
-                      className={styles.categoryCard}
-                      style={{ width: '100%' }}
+                      className={styles.cardAction}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <div className={styles.categoryIconBadge}>
-                        {icon}
-                      </div>
-
-                      <h3 className={styles.categoryName}>
-                        {cat.name}
-                      </h3>
-
-                      <p className={styles.categoryDesc}>
-                        {description}
-                      </p>
-
-                      <div className={styles.cardAction}>
-                        <span>Book Service</span>
-                        <span className={styles.cardActionArrow}>&rarr;</span>
-                      </div>
+                      <span>Book</span>
+                      <span className={styles.cardActionArrow}>&rarr;</span>
                     </Link>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
