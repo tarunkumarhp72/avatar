@@ -39,7 +39,7 @@ export default function CityHero() {
   const wv = isNight ? '1;0.4;1' : '1;0.85;1';
   const ho = isNight ? '0.9' : '0';
   const overlay = isNight ? '0.34' : '0';
-  const cloudOp = isNight ? '0' : '0.6';
+  const cloudOp = '0';
   const sunOp = isNight ? '0' : '1';
   const lampOp = isNight ? '0.95' : '0';
 
@@ -172,7 +172,7 @@ export default function CityHero() {
         }
 
         const px = m.ox + m.s * (720 + c.z * (wx - c.cx));
-        const py = m.oy + m.s * (400 + c.z * (wy - c.cy)) - 2;
+        const py = m.oy + m.s * (400 + c.z * (wy - c.cy)) - 2 - 36 * c.z * m.s;
         const ep = document.getElementById(`pin-${i}`);
         if (ep) {
           const v2 = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
@@ -413,87 +413,95 @@ export default function CityHero() {
             ))}
 
             {/* Moving Cars & Service Vans */}
+            {/* Moving Cars & Service Vans (Upgraded Vector Models & One-Way Multi-Vehicle Flow) */}
             {city.cars.map((c, i) => (
               <g key={`car-${i}`} transform={c.tf}>
                 <g>
                   <animateTransform attributeName="transform" type="translate" values={c.vals} keyTimes={c.kt} dur={`${c.dur}s`} begin={`${c.begin}s`} repeatCount="indefinite" />
                   <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.04;0.96;1" dur={`${c.dur}s`} begin={`${c.begin}s`} repeatCount="indefinite" />
                   <polygon points={c.cone} fill="rgba(255,240,175,0.42)" opacity={ho} />
-                  <polygon points={c.shadow} fill="rgba(10,15,30,0.24)" />
+                  <ellipse cx={c.w1x} cy={c.w1y} rx="2.6" ry="3.1" fill="#101015" />
                   <polygon points={c.bl} fill={c.cl} />
                   <polygon points={c.br} fill={c.cr} />
                   <polygon points={c.bl} fill="url(#wallShade)" />
                   <polygon points={c.br} fill="url(#wallShade)" />
-                  <ellipse cx={c.w1x} cy={c.w1y} rx="2.8" ry="3.3" fill="#15151c" />
+                  <polygon points={c.skirtL} fill="rgba(0,0,0,0.28)" />
+                  <polygon points={c.skirtR} fill="rgba(0,0,0,0.34)" />
+                  <path d={c.doors} stroke="rgba(0,0,0,0.3)" strokeWidth="0.6" fill="none" />
                   <ellipse cx={c.w2x} cy={c.w2y} rx="2.8" ry="3.3" fill="#15151c" />
+                  <ellipse cx={c.w2x} cy={c.w2y} rx="1.4" ry="1.7" fill="#aeb4bd" />
+                  <ellipse cx={c.w3x} cy={c.w3y} rx="2.8" ry="3.3" fill="#15151c" />
+                  <ellipse cx={c.w3x} cy={c.w3y} rx="1.4" ry="1.7" fill="#aeb4bd" />
                   <polygon points={c.bt} fill={c.ct} />
-                  <polygon points={c.kl} fill="#b7d3e6" />
-                  <polygon points={c.kr} fill="#8fb4cc" />
+                  <polygon points={c.kl} fill={c.cl} />
+                  <polygon points={c.kr} fill={c.cr} />
+                  <polygon points={c.gl} fill="#a9cbe0" />
+                  <polygon points={c.gr} fill="#7ea3bd" />
+                  <polygon points={c.gl} fill="rgba(255,255,255,0.25)" transform="translate(0 -0.6)" />
                   <polygon points={c.kt2} fill={c.ct} />
-                  <circle cx={c.tlx} cy={c.tly} r="1.7" fill="#ff4b4b" />
+                  {c.sign && <polygon points={c.sign} fill="#fff6c8" />}
+                  <polygon points={c.tl} fill="#ff3b3b" />
+                  <polygon points={c.plate} fill="#f1f1ea" />
                   <circle cx={c.hx} cy={c.hy} r="18" fill="url(#lampGlow)" opacity={ho} />
                   <circle cx={c.hx} cy={c.hy} r="1.8" fill="#fff6c8" />
-
-                  {c.isVan && (
-                    <g>
-                      <rect x="-58" y="-56" width="116" height="24" rx="12" fill="#ffffff" />
-                      <polygon points="-5,-32 5,-32 0,-25" fill="#ffffff" />
-                      <circle cx="-45" cy="-44" r="3.5" fill="#2fbf71" />
-                      <text x="5" y="-40" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f1d3f" fontFamily="Plus Jakarta Sans, system-ui, sans-serif">
-                        Plumber · 4 min
-                      </text>
-                    </g>
-                  )}
                 </g>
               </g>
             ))}
 
-            {/* Service Specialist Walkers (Animated along Block Routes) */}
-            {city.pinWalkers.map((pw) => (
-              <g key={pw.id} id={pw.id} transform="translate(-9999 -9999)">
-                <ellipse cx="0" cy="0" rx="10" ry="4.4" fill="none" stroke={pw.ring} strokeWidth="1.6" opacity="0.85" />
-                <ellipse cx="0" cy="0" rx="7" ry="3" fill="rgba(10,20,10,0.3)" />
-                <g>
-                  <animateTransform attributeName="transform" type="translate" values="0 0;0 -1.4;0 0" dur="0.5s" begin={`${pw.bb}s`} repeatCount="indefinite" />
-                  <g id={`${pw.id}f`} transform="scale(1.45 1.45)">
-                    <g>
-                      <animateTransform attributeName="transform" type="rotate" values="-22 -1.7 -8;22 -1.7 -8;-22 -1.7 -8" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
-                      <rect x="-2.8" y="-8" width="2.2" height="7.6" rx="1" fill={pw.pants} />
-                      <ellipse cx="-1.1" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
-                    </g>
-                    <rect x="-6.2" y="-16.5" width="3" height="7.5" rx="1" fill={pw.bag} />
-                    <rect x="-1" y="-18.8" width="2" height="2.4" fill={pw.skin} />
-                    <rect x="-3.6" y="-17.5" width="7.2" height="10.5" rx="2.4" fill={pw.shirt} />
-                    <rect x="0.4" y="-17.5" width="3.2" height="10.5" rx="1.6" fill="rgba(0,0,0,0.16)" />
-                    <rect x="-3.6" y="-16.2" width="7.2" height="2.2" fill={pw.vest} />
-                    <rect x="-2.6" y="-13" width="5.2" height="6" rx="1" fill={pw.apron} />
-                    <g>
-                      <animateTransform attributeName="transform" type="rotate" values="22 1.7 -8;-22 1.7 -8;22 1.7 -8" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
-                      <rect x="0.6" y="-8" width="2.2" height="7.6" rx="1" fill={pw.pants} />
-                      <ellipse cx="1.9" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
-                    </g>
-                    <g>
-                      <animateTransform attributeName="transform" type="rotate" values="20 -3.7 -16.5;-20 -3.7 -16.5;20 -3.7 -16.5" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
-                      <rect x="-5" y="-17" width="1.7" height="7.2" rx="0.8" fill={pw.shirt} />
-                      <circle cx="-4.15" cy="-9.4" r="1.15" fill={pw.skin} />
-                    </g>
-                    <g>
-                      <animateTransform attributeName="transform" type="rotate" values="-20 3.7 -16.5;20 3.7 -16.5;-20 3.7 -16.5" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
-                      <rect x="3.3" y="-17" width="1.7" height="7.2" rx="0.8" fill={pw.shirt} />
-                      <circle cx="4.15" cy="-9.4" r="1.15" fill={pw.skin} />
-                    </g>
-                    <rect x="-3.9" y="-22.2" width="2.4" height="3.6" rx="1.1" fill={pw.hair} />
-                    <circle cx="0" cy="-21" r="3.6" fill={pw.skin} />
-                    <circle cx="1.9" cy="-21.2" r="0.55" fill="#1a1a1a" />
-                    <path d="M-4 -21.6 A4 4 0 0 1 4 -21.6 Z" fill={pw.hat} />
-                    <rect x="-4.4" y="-22.5" width="9.4" height="1.1" rx="0.5" fill={pw.brim} />
-                  </g>
-                </g>
-              </g>
-            ))}
-
-            {/* Scene Elements: Trees, Lamps, Walkers, Fountains, Buildings, Houses */}
+            {/* Scene Elements: Depth-Sorted Trees, Lamps, Walkers, Specialists (isPW), Fountains, Buildings, Houses */}
             {city.scene.map((it, i) => {
+              if (it.isPW) {
+                return (
+                  <g key={`pw-${it.id}`} id={it.id} transform="translate(-9999 -9999)">
+                    <g>
+                      <animateTransform attributeName="transform" type="translate" values="0 0;0 -1.4;0 0" dur="0.5s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                      <g id={`${it.id}f`} transform="scale(1.45 1.45)">
+                        <g>
+                          <animateTransform attributeName="transform" type="rotate" values="-22 -1.7 -8;22 -1.7 -8;-22 -1.7 -8" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                          <rect x="-2.8" y="-8.6" width="2.4" height="8.2" rx="1.1" fill={it.pants} />
+                          <rect x="-2.8" y="-8.6" width="2.4" height="8.2" rx="1.1" fill="rgba(0,0,0,0.22)" />
+                          <path d="M-3.4 -1.2 H0.4 A1.5 1.5 0 0 1 1.9 0.3 V0.5 H-3.4 Z" fill="#1c1c24" />
+                          <rect x="-3.4" y="0.1" width="5.3" height="0.5" fill="#d9d9de" />
+                        </g>
+                        <g>
+                          <animateTransform attributeName="transform" type="rotate" values="-20 3.7 -16.5;20 3.7 -16.5;-20 3.7 -16.5" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                          <rect x="3.2" y="-17" width="1.8" height="7.4" rx="0.9" fill={it.shirt} />
+                          <rect x="3.2" y="-17" width="1.8" height="7.4" rx="0.9" fill="rgba(0,0,0,0.3)" />
+                          <circle cx="4.1" cy="-9.3" r="1.2" fill={it.skin} />
+                        </g>
+                        <rect x="-6.4" y="-16.5" width="3.2" height="7.8" rx="1.2" fill={it.bag} />
+                        <rect x="-1.1" y="-19" width="2.2" height="2.6" rx="0.6" fill={it.skin} />
+                        <rect x="-3.7" y="-17.6" width="7.4" height="10.8" rx="2.5" fill={it.shirt} />
+                        <rect x="0.4" y="-17.6" width="3.3" height="10.8" rx="1.6" fill="rgba(0,0,0,0.17)" />
+                        <rect x="-3.7" y="-16.3" width="7.4" height="2.2" fill={it.vest} />
+                        <rect x="-2.7" y="-13.2" width="5.4" height="6.2" rx="1" fill={it.apron} />
+                        <rect x="-3.7" y="-8.4" width="7.4" height="1.3" fill="rgba(20,20,30,0.55)" />
+                        <path d="M-1.4 -17.6 L0 -15.9 L1.4 -17.6 Z" fill="rgba(255,255,255,0.55)" />
+                        <g>
+                          <animateTransform attributeName="transform" type="rotate" values="22 1.7 -8;-22 1.7 -8;22 1.7 -8" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                          <rect x="0.5" y="-8.6" width="2.4" height="8.2" rx="1.1" fill={it.pants} />
+                          <path d="M-0.1 -1.2 H3.9 A1.5 1.5 0 0 1 5.4 0.3 V0.5 H-0.1 Z" fill="#26262f" />
+                          <rect x="-0.1" y="0.1" width="5.5" height="0.5" fill="#f1f1f4" />
+                        </g>
+                        <g>
+                          <animateTransform attributeName="transform" type="rotate" values="20 -3.7 -16.5;-20 -3.7 -16.5;20 -3.7 -16.5" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                          <rect x="-5" y="-17" width="1.8" height="7.4" rx="0.9" fill={it.shirt} />
+                          <circle cx="-4.1" cy="-9.3" r="1.2" fill={it.skin} />
+                        </g>
+                        <rect x="-4.1" y="-22.4" width="2.6" height="4.2" rx="1.2" fill={it.hair} />
+                        <circle cx="0" cy="-21" r="3.7" fill={it.skin} />
+                        <ellipse cx="-3.4" cy="-20.8" rx="0.8" ry="1.1" fill={it.skin} />
+                        <path d="M-3.8 -21.2 A3.8 3.8 0 0 1 3.8 -21.4 Q2.2 -23 0.2 -22.4 Q-1.6 -22 -3.8 -21.2 Z" fill={it.hair} />
+                        <circle cx="2" cy="-20.9" r="0.55" fill="#1a1a1a" />
+                        <path d="M1.2 -21.9 L2.9 -21.8" stroke="rgba(30,20,15,0.7)" strokeWidth="0.35" fill="none" />
+                        <path d="M1 -19.3 Q2 -18.7 3 -19.3" stroke="rgba(120,40,40,0.7)" strokeWidth="0.4" fill="none" />
+                        <path d="M-4.1 -21.6 A4.1 4.1 0 0 1 4.1 -21.6 Z" fill={it.hat} />
+                        <rect x="-4.5" y="-22.6" width="9.6" height="1.1" rx="0.5" fill={it.brim} />
+                      </g>
+                    </g>
+                  </g>
+                );
+              }
               if (it.isTree) {
                 return (
                   <g key={`tree-${i}`}>
@@ -619,7 +627,6 @@ export default function CityHero() {
                   <g key={`walker-${i}`} transform={it.tf}>
                     <g>
                       <animateTransform attributeName="transform" type="translate" values={it.vals} dur={`${it.dur}s`} begin={`${it.begin}s`} repeatCount="indefinite" />
-                      <ellipse cx="0" cy="0" rx="6" ry="2.6" fill="rgba(10,20,10,0.26)" />
                       <g>
                         <animateTransform attributeName="transform" type="translate" values="0 0;0 -1.4;0 0" dur="0.5s" begin={`${it.bb}s`} repeatCount="indefinite" />
                         <g transform={`scale(${it.sc})`}>
@@ -627,35 +634,45 @@ export default function CityHero() {
                             <animateTransform attributeName="transform" type="scale" calcMode="discrete" values={it.fl} keyTimes="0;0.5" dur={`${it.dur}s`} begin={`${it.begin}s`} repeatCount="indefinite" />
                             <g>
                               <animateTransform attributeName="transform" type="rotate" values="-22 -1.7 -8;22 -1.7 -8;-22 -1.7 -8" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
-                              <rect x="-2.8" y="-8" width="2.2" height="7.6" rx="1" fill={it.pants} />
-                              <ellipse cx="-1.1" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
-                            </g>
-                            <rect x="-6.2" y="-16.5" width="3" height="7.5" rx="1" fill={it.bag} />
-                            <rect x="-1" y="-18.8" width="2" height="2.4" fill={it.skin} />
-                            <rect x="-3.6" y="-17.5" width="7.2" height="10.5" rx="2.4" fill={it.shirt} />
-                            <rect x="0.4" y="-17.5" width="3.2" height="10.5" rx="1.6" fill="rgba(0,0,0,0.16)" />
-                            <rect x="-3.6" y="-16.2" width="7.2" height="2.2" fill={it.vest} />
-                            <rect x="-2.6" y="-13" width="5.2" height="6" rx="1" fill={it.apron} />
-                            <g>
-                              <animateTransform attributeName="transform" type="rotate" values="22 1.7 -8;-22 1.7 -8;22 1.7 -8" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
-                              <rect x="0.6" y="-8" width="2.2" height="7.6" rx="1" fill={it.pants} />
-                              <ellipse cx="1.9" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
-                            </g>
-                            <g>
-                              <animateTransform attributeName="transform" type="rotate" values="20 -3.7 -16.5;-20 -3.7 -16.5;20 -3.7 -16.5" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
-                              <rect x="-5" y="-17" width="1.7" height="7.2" rx="0.8" fill={it.shirt} />
-                              <circle cx="-4.15" cy="-9.4" r="1.15" fill={it.skin} />
+                              <rect x="-2.8" y="-8.6" width="2.4" height="8.2" rx="1.1" fill={it.pants} />
+                              <rect x="-2.8" y="-8.6" width="2.4" height="8.2" rx="1.1" fill="rgba(0,0,0,0.22)" />
+                              <path d="M-3.4 -1.2 H0.4 A1.5 1.5 0 0 1 1.9 0.3 V0.5 H-3.4 Z" fill="#1c1c24" />
+                              <rect x="-3.4" y="0.1" width="5.3" height="0.5" fill="#d9d9de" />
                             </g>
                             <g>
                               <animateTransform attributeName="transform" type="rotate" values="-20 3.7 -16.5;20 3.7 -16.5;-20 3.7 -16.5" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
-                              <rect x="3.3" y="-17" width="1.7" height="7.2" rx="0.8" fill={it.shirt} />
-                              <circle cx="4.15" cy="-9.4" r="1.15" fill={it.skin} />
+                              <rect x="3.2" y="-17" width="1.8" height="7.4" rx="0.9" fill={it.shirt} />
+                              <rect x="3.2" y="-17" width="1.8" height="7.4" rx="0.9" fill="rgba(0,0,0,0.3)" />
+                              <circle cx="4.1" cy="-9.3" r="1.2" fill={it.skin} />
                             </g>
-                            <rect x="-3.9" y="-22.2" width="2.4" height="3.6" rx="1.1" fill={it.hair} />
-                            <circle cx="0" cy="-21" r="3.6" fill={it.skin} />
-                            <circle cx="1.9" cy="-21.2" r="0.55" fill="#1a1a1a" />
-                            <path d="M-4 -21.6 A4 4 0 0 1 4 -21.6 Z" fill={it.hat} />
-                            <rect x="-4.4" y="-22.5" width="9.4" height="1.1" rx="0.5" fill={it.brim} />
+                            <rect x="-6.4" y="-16.5" width="3.2" height="7.8" rx="1.2" fill={it.bag} />
+                            <rect x="-1.1" y="-19" width="2.2" height="2.6" rx="0.6" fill={it.skin} />
+                            <rect x="-3.7" y="-17.6" width="7.4" height="10.8" rx="2.5" fill={it.shirt} />
+                            <rect x="0.4" y="-17.6" width="3.3" height="10.8" rx="1.6" fill="rgba(0,0,0,0.17)" />
+                            <rect x="-3.7" y="-16.3" width="7.4" height="2.2" fill={it.vest} />
+                            <rect x="-2.7" y="-13.2" width="5.4" height="6.2" rx="1" fill={it.apron} />
+                            <rect x="-3.7" y="-8.4" width="7.4" height="1.3" fill="rgba(20,20,30,0.55)" />
+                            <path d="M-1.4 -17.6 L0 -15.9 L1.4 -17.6 Z" fill="rgba(255,255,255,0.55)" />
+                            <g>
+                              <animateTransform attributeName="transform" type="rotate" values="22 1.7 -8;-22 1.7 -8;22 1.7 -8" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                              <rect x="0.5" y="-8.6" width="2.4" height="8.2" rx="1.1" fill={it.pants} />
+                              <path d="M-0.1 -1.2 H3.9 A1.5 1.5 0 0 1 5.4 0.3 V0.5 H-0.1 Z" fill="#26262f" />
+                              <rect x="-0.1" y="0.1" width="5.5" height="0.5" fill="#f1f1f4" />
+                            </g>
+                            <g>
+                              <animateTransform attributeName="transform" type="rotate" values="20 -3.7 -16.5;-20 -3.7 -16.5;20 -3.7 -16.5" dur="1s" begin={`${it.bb}s`} repeatCount="indefinite" />
+                              <rect x="-5" y="-17" width="1.8" height="7.4" rx="0.9" fill={it.shirt} />
+                              <circle cx="-4.1" cy="-9.3" r="1.2" fill={it.skin} />
+                            </g>
+                            <rect x="-4.1" y="-22.4" width="2.6" height="4.2" rx="1.2" fill={it.hair} />
+                            <circle cx="0" cy="-21" r="3.7" fill={it.skin} />
+                            <ellipse cx="-3.4" cy="-20.8" rx="0.8" ry="1.1" fill={it.skin} />
+                            <path d="M-3.8 -21.2 A3.8 3.8 0 0 1 3.8 -21.4 Q2.2 -23 0.2 -22.4 Q-1.6 -22 -3.8 -21.2 Z" fill={it.hair} />
+                            <circle cx="2" cy="-20.9" r="0.55" fill="#1a1a1a" />
+                            <path d="M1.2 -21.9 L2.9 -21.8" stroke="rgba(30,20,15,0.7)" strokeWidth="0.35" fill="none" />
+                            <path d="M1 -19.3 Q2 -18.7 3 -19.3" stroke="rgba(120,40,40,0.7)" strokeWidth="0.4" fill="none" />
+                            <path d="M-4.1 -21.6 A4.1 4.1 0 0 1 4.1 -21.6 Z" fill={it.hat} />
+                            <rect x="-4.5" y="-22.6" width="9.6" height="1.1" rx="0.5" fill={it.brim} />
                           </g>
                         </g>
                       </g>
@@ -666,6 +683,24 @@ export default function CityHero() {
 
               return null;
             })}
+
+            {/* Service Van Overlay Labels (Plumber · 4 min - rendered above buildings) */}
+            {city.vanLabels.map((c, i) => (
+              <g key={`van-lbl-${i}`} transform={c.tf}>
+                <g>
+                  <animateTransform attributeName="transform" type="translate" values={c.vals} keyTimes={c.kt} dur={`${c.dur}s`} begin={`${c.begin}s`} repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.04;0.96;1" dur={`${c.dur}s`} begin={`${c.begin}s`} repeatCount="indefinite" />
+                  <g>
+                    <rect x="-58" y="-56" width="116" height="24" rx="12" fill="#ffffff" />
+                    <polygon points="-5,-32 5,-32 0,-25" fill="#ffffff" />
+                    <circle cx="-45" cy="-44" r="3.5" fill="#2fbf71" />
+                    <text x="5" y="-40" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f1d3f" fontFamily="Plus Jakarta Sans, system-ui, sans-serif">
+                      Plumber · 4 min
+                    </text>
+                  </g>
+                </g>
+              </g>
+            ))}
           </g>
 
           {/* Drifting Clouds */}

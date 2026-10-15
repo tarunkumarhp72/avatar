@@ -1,5 +1,5 @@
 // Deterministic procedural city geometry generator for Avatar 3D Animated Hero
-// Exact isometric projection and mathematical layout from the reference city model.
+// Exact isometric projection and mathematical layout from latest Hero - animated city model.
 
 export interface PinWalker {
   id: string;
@@ -24,6 +24,41 @@ export interface PinData {
   off: number;
 }
 
+export interface CityCar {
+  tf: string;
+  vals: string;
+  kt: string;
+  dur: number;
+  begin: number;
+  isVan: boolean;
+  w1x: string;
+  w1y: string;
+  w2x: string;
+  w2y: string;
+  w3x: string;
+  w3y: string;
+  hx: string;
+  hy: string;
+  cone: string;
+  bl: string;
+  br: string;
+  bt: string;
+  cl: string;
+  cr: string;
+  ct: string;
+  kl: string;
+  kr: string;
+  kt2: string;
+  gl: string;
+  gr: string;
+  skirtL: string;
+  skirtR: string;
+  doors: string;
+  tl: string;
+  plate: string;
+  sign: string;
+}
+
 export interface CityData {
   roads: Array<{ p: string }>;
   dashes: Array<{ x1: string; y1: string; x2: string; y2: string }>;
@@ -31,33 +66,8 @@ export interface CityData {
   blocks: Array<{ p: string }>;
   grass: Array<{ p: string; c: string }>;
   plazas: Array<{ p: string }>;
-  cars: Array<{
-    tf: string;
-    vals: string;
-    kt: string;
-    dur: number;
-    begin: number;
-    isVan: boolean;
-    w1x: string;
-    w1y: string;
-    w2x: string;
-    w2y: string;
-    hx: string;
-    hy: string;
-    tlx: string;
-    tly: string;
-    cone: string;
-    shadow: string;
-    bl: string;
-    br: string;
-    bt: string;
-    cl: string;
-    cr: string;
-    ct: string;
-    kl: string;
-    kr: string;
-    kt2: string;
-  }>;
+  cars: CityCar[];
+  vanLabels: CityCar[];
   scene: Array<any>;
   glows: Array<{ cx: string; cy: string }>;
   pinWalkers: PinWalker[];
@@ -229,7 +239,7 @@ export function getCityData(): CityData {
   };
 
   const mk = (o: any) => Object.assign({
-    isBldg: false, isHouse: false, isTree: false, isFountain: false, isWalker: false, isLamp: false, isLight: false, depth: 0,
+    isPW: false, id: '', isBldg: false, isHouse: false, isTree: false, isFountain: false, isWalker: false, isLamp: false, isLight: false, depth: 0,
     left: '', right: '', top: '', topIn: '', gable: '', roof: '', winL: '', winR: '', winLo: '', winRo: '',
     cl: '', cr: '', ct: '', ctIn: '', roofC: '',
     cx: 0, cy: 0, by: 0, tx: 0, ty: 0, r: 0, hx: 0, hy: 0, hr: 0, px: 0, py: 0, sp: 0, sx: 0, sy: 0, sr: 0, r1: 0, r2: 0, r3: 0,
@@ -284,7 +294,7 @@ export function getCityData(): CityData {
     const dur = 2 * (11 + R() * 10);
     const dxs = b[0] - a[0];
     scene.push(mk({
-      isWalker: true, depth: (gx0 + gx1) / 2 + (gy0 + gy1) / 2 + 0.2,
+      isWalker: true, depth: Math.max(gx0 + gy0, gx1 + gy1) + 0.5,
       tf: 'translate(' + f(a[0]) + ',' + f(a[1]) + ')',
       vals: '0 0;' + f(b[0] - a[0]) + ' ' + f(b[1] - a[1]) + ';0 0',
       dur: dur.toFixed(1), begin: (-R() * dur).toFixed(1), bb: (-R() * 0.5).toFixed(2),
@@ -306,12 +316,18 @@ export function getCityData(): CityData {
     { name: 'MECHANIC', bi: 1, bj: 4, speed: 11.5, off: 0.2 },
     { name: 'CARPENTER', bi: 4, bj: 1, speed: 12.5, off: 0.55 }
   ];
+
   const pinBlocks: Record<string, number> = {};
-  PIN_DEF.forEach((d, i) => { pinBlocks[d.bi + ',' + d.bj] = i; });
+  PIN_DEF.forEach((d, i) => {
+    pinBlocks[d.bi + ',' + d.bj] = i;
+  });
 
   let savedS = 0;
   for (let pass = 0; pass < 2; pass++) {
-    if (pass === 1) { savedS = s; s = 77777; }
+    if (pass === 1) {
+      savedS = s;
+      s = 77777;
+    }
     for (let bi = KMIN; bi <= KMAX; bi++) {
       for (let bj = KMIN; bj <= KMAX; bj++) {
         const x0 = 5 * bi + 1, y0 = 5 * bj + 1;
@@ -319,7 +335,10 @@ export function getCityData(): CityData {
         if (pass === 0 ? !visOld(c[0], c[1], 150, 90) : (visOld(c[0], c[1], 150, 90) || !visible(c[0], c[1], 150, 90))) continue;
         const pinIdx = pinBlocks[bi + ',' + bj];
         blocks.push({ p: pts([P(x0 - 0.05, y0 - 0.05), P(x0 + 4.05, y0 - 0.05), P(x0 + 4.05, y0 + 4.05), P(x0 - 0.05, y0 + 4.05)]) });
-        grass.push({ p: pts([P(x0 + 0.3, y0 + 0.3), P(x0 + 3.7, y0 + 0.3), P(x0 + 3.7, y0 + 3.7), P(x0 + 0.3, y0 + 3.7)]), c: (bi + bj) % 2 ? '#86c45a' : '#7fbe55' });
+        grass.push({
+          p: pts([P(x0 + 0.3, y0 + 0.3), P(x0 + 3.7, y0 + 0.3), P(x0 + 3.7, y0 + 3.7), P(x0 + 0.3, y0 + 3.7)]),
+          c: (bi + bj) % 2 ? '#86c45a' : '#7fbe55'
+        });
 
         lamp(x0 + 3.9, y0 + 2);
         lamp(x0 + 2, y0 + 3.9);
@@ -329,8 +348,12 @@ export function getCityData(): CityData {
           plazas.push({ p: pts([P(x0 + 0.65, y0 + 0.65), P(x0 + 3.35, y0 + 0.65), P(x0 + 3.35, y0 + 3.35), P(x0 + 0.65, y0 + 3.35)]) });
           const fc = P(x0 + 2, y0 + 2, 0);
           scene.push(mk({ isFountain: true, depth: x0 + y0 + 4, cx: fc[0], by: fc[1], px: fc[0] - 3, py: fc[1] - 20, sp: fc[1] - 26 }));
-          tree(x0 + 0.5, y0 + 0.5); tree(x0 + 3.5, y0 + 0.5); tree(x0 + 0.5, y0 + 3.5); tree(x0 + 3.5, y0 + 3.5);
-          tree(x0 + 2, y0 + 0.45); tree(x0 + 0.45, y0 + 2);
+          tree(x0 + 0.5, y0 + 0.5);
+          tree(x0 + 3.5, y0 + 0.5);
+          tree(x0 + 0.5, y0 + 3.5);
+          tree(x0 + 3.5, y0 + 3.5);
+          tree(x0 + 2, y0 + 0.45);
+          tree(x0 + 0.45, y0 + 2);
           walker(x0 + 1, y0 + 1, x0 + 3, y0 + 1.2);
           continue;
         }
@@ -339,7 +362,8 @@ export function getCityData(): CityData {
           for (let lj = 0; lj < 2; lj++) {
             const lx = x0 + li * 2, ly = y0 + lj * 2, t = R();
             if (t < 0.22) {
-              tree(lx + 0.6, ly + 0.6); tree(lx + 1.4, ly + 1.2);
+              tree(lx + 0.6, ly + 0.6);
+              tree(lx + 1.4, ly + 1.2);
               if (R() < 0.5) tree(lx + 1.1, ly + 0.5);
               continue;
             }
@@ -398,8 +422,8 @@ export function getCityData(): CityData {
 
         const wr = R();
         const nPre = scene.length;
-        if (wr < 0.35) walker(x0 + 3.88, y0 + 0.2, x0 + 3.88, y0 + 3.8);
-        else if (wr < 0.6) walker(x0 + 0.2, y0 + 3.88, x0 + 3.8, y0 + 3.88);
+        if (wr < 0.35) walker(x0 + 3.88, y0 + 1.6, x0 + 3.88, y0 + 3.8);
+        else if (wr < 0.6) walker(x0 + 1.6, y0 + 3.88, x0 + 3.8, y0 + 3.88);
         if (pinIdx !== undefined) scene.length = nPre;
       }
     }
@@ -419,11 +443,11 @@ export function getCityData(): CityData {
   PIN_DEF.forEach((d, i) => {
     const px0 = 5 * d.bi + 1, py0 = 5 * d.bj + 1, pm = 0.14, pe = 4 - pm;
     const rt: Array<[number, number]> = [
-      P(px0 + pm, py0 + pm),
-      P(px0 + pe, py0 + pm),
+      P(px0 + 1.6, py0 + pe),
       P(px0 + pe, py0 + pe),
-      P(px0 + pm, py0 + pe),
-      P(px0 + pm, py0 + pm)
+      P(px0 + pe, py0 + 1.6),
+      P(px0 + pe, py0 + pe),
+      P(px0 + 1.6, py0 + pe)
     ];
     const cum = [0];
     for (let k = 1; k < rt.length; k++) {
@@ -431,18 +455,22 @@ export function getCityData(): CityData {
     }
     const len = cum[cum.length - 1];
     pinData.push({ route: rt, cum, len, speed: d.speed, off: d.off * len });
-    pinWalkers.push({
+    const pwDef = {
+      isPW: true,
+      depth: px0 + py0 + 7.9,
       id: 'pw' + i,
       bb: (-0.13 * i).toFixed(2),
       skin: skins[i % 3],
       hair: hairs[i % 3],
       ...PIN_LOOKS[i]
-    });
+    };
+    scene.push(mk(pwDef));
+    pinWalkers.push(pwDef);
   });
 
   scene.sort((a, b) => a.depth - b.depth);
 
-  const cars: CityData['cars'] = [];
+  const cars: CityCar[] = [];
   const carCols = ['#d9483b', '#f2b134', '#3b78c4', '#f4f4f0', '#2f9e6d', '#7a4fb5', '#222a3a'];
   const box = (x0: number, x1: number, y0: number, y1: number, z0: number, z1: number) => ({
     t: pts([Lc(x0, y0, z1), Lc(x1, y0, z1), Lc(x1, y1, z1), Lc(x0, y1, z1)]),
@@ -453,10 +481,11 @@ export function getCityData(): CityData {
   let labeled = false;
   const T = 16, GX = [0, 6.5], GY = [8, 14.5];
 
+  // one-way streets: only the far lane (away from sidewalk walkers) is used, so cars never share a lane with an opposite car
   for (const axis of ['x', 'y'] as const) {
     for (let k = KMIN; k <= KMAX; k++) {
-      for (let lane = 0; lane < 2; lane++) {
-        const off = lane ? 0.72 : 0.28, dir = lane ? -1 : 1;
+      for (let lane = 1; lane < 2; lane++) {
+        const off = 0.72;
         let aMin: number | null = null, aMax: number | null = null;
         for (let a = A0; a <= A1; a += 0.5) {
           const q = axis === 'x' ? P(a, 5 * k + off) : P(5 * k + off, a);
@@ -465,17 +494,17 @@ export function getCityData(): CityData {
             aMax = a;
           }
         }
-        const vanLane = axis === 'x' && k === 2 && lane === 0;
-        if (aMin === null || (!vanLane && R() < 0.3)) continue;
+        const vanLane = axis === 'x' && k === 3;
+        if (aMin === null || (!vanLane && R() < 0.05)) continue;
         const v = 1.0 + R() * 0.5;
-        const sA = dir > 0 ? aMin : aMax!, eA = dir > 0 ? aMax! : aMin;
+        const sA = aMax!, eA = aMin;
         const win = axis === 'x' ? GX : GY;
         const stops: number[] = [];
         for (let j = KMIN - 1; j <= KMAX + 1; j++) {
-          const stp = dir > 0 ? 5 * j - 0.5 : 5 * j + 1.5;
-          if (dir > 0 ? (stp > sA && stp < eA) : (stp < sA && stp > eA)) stops.push(stp);
+          const stp = 5 * j + 1.5;
+          if (stp < sA && stp > eA) stops.push(stp);
         }
-        stops.sort((a, b) => (dir > 0 ? a - b : b - a));
+        stops.sort((a, b) => b - a);
         let t = 0, p = sA;
         const kf: Array<[number, number]> = [[0, sA]];
         for (const stp of stops) {
@@ -501,39 +530,74 @@ export function getCityData(): CityData {
           return f(q[0] - p0[0]) + ' ' + f(q[1] - p0[1]);
         }).join(';');
         const kt = kf.map((e) => (e[0] / Dd).toFixed(4)).join(';');
-        const n = Dd >= 32 ? 2 : 1;
-        const delta = T * Math.round(Dd / T / 2);
+        
+        // 2 cars per loop, spaced half a loop apart (rounded to whole signal cycles) so they never bunch up
+        const n = Math.max(1, Math.min(3, Math.floor(Dd / T)));
+        const delta = T * Math.max(1, Math.round(Dd / T / n));
         const baseBegin = -T * Math.floor(R() * (Dd / T));
+
         for (let i = 0; i < n; i++) {
           const van = !labeled && vanLane && i === 0;
           if (van) labeled = true;
+          const type = van ? 2 : (R() < 0.3 ? 1 : 0); // 0 sedan, 1 SUV, 2 van
           const col = van ? '#243b6b' : pick(carCols);
-          const hl = axis === 'x' ? [-0.4, 0.4, -0.19, 0.19] : [-0.19, 0.19, -0.4, 0.4];
-          const cb = axis === 'x' ? [-0.17, 0.17, -0.15, 0.15] : [-0.15, 0.15, -0.17, 0.17];
-          const bd = box(hl[0], hl[1], hl[2], hl[3], 3, 10), kb = box(cb[0], cb[1], cb[2], cb[3], 10, 16);
-          const wa = axis === 'x' ? Lc(-0.25, hl[3], 3) : Lc(hl[1], -0.25, 3);
-          const wb = axis === 'x' ? Lc(0.25, hl[3], 3) : Lc(hl[1], 0.25, 3);
-          const fr = axis === 'x' ? Lc(dir > 0 ? hl[1] : hl[0], 0, 7) : Lc(0, dir > 0 ? hl[3] : hl[2], 7);
-          const bk = axis === 'x' ? Lc(dir > 0 ? hl[0] : hl[1], 0, 7) : Lc(0, dir > 0 ? hl[2] : hl[3], 7);
-          const F = axis === 'x' ? (dir > 0 ? hl[1] : hl[0]) : (dir > 0 ? hl[3] : hl[2]);
-          const far = F + dir * 1.7;
+          const hlen = type === 2 ? 0.46 : type === 1 ? 0.42 : 0.4, hw = 0.19;
+          const clen = type === 2 ? 0.34 : type === 1 ? 0.27 : 0.17;
+          const cz0 = type === 2 ? 12 : 10, cz1 = type === 2 ? 18 : type === 1 ? 16.5 : 15.5;
+          const hl = axis === 'x' ? [-hlen, hlen, -hw, hw] : [-hw, hw, -hlen, hlen];
+          const cb = axis === 'x' ? [-clen, clen * 0.85, -0.15, 0.15] : [-0.15, 0.15, -clen, clen * 0.85];
+          const gi = 0.035;
+          const gb = axis === 'x' ? [cb[0] + gi, cb[1] - gi, cb[2], cb[3]] : [cb[0], cb[1], cb[2] + gi, cb[3] - gi];
+          const bd = box(hl[0], hl[1], hl[2], hl[3], 3, cz0);
+          const kb = box(cb[0], cb[1], cb[2], cb[3], cz0, cz1);
+          const gk = box(gb[0], gb[1], gb[2], gb[3], cz0 + 0.9, cz1 - 0.8);
+
+          // wheels: near side (visible) at +y / +x; far side peeks under the body
+          const wl = hlen * 0.62;
+          const wa = axis === 'x' ? Lc(-wl, hl[3], 3) : Lc(hl[1], -wl, 3);
+          const wb = axis === 'x' ? Lc(wl, hl[3], 3) : Lc(hl[1], wl, 3);
+          const wc = axis === 'x' ? Lc(-wl, hl[2], 3) : Lc(hl[0], -wl, 3);
+          const fr = axis === 'x' ? Lc(hl[0], 0, 7) : Lc(0, hl[2], 7);
+          const F = axis === 'x' ? hl[0] : hl[2];
+          const far = F - 1.7;
           const cone = axis === 'x'
             ? pts([Lc(F, -0.12, 2), Lc(F, 0.12, 2), Lc(far, 0.5, 0), Lc(far, -0.5, 0)])
             : pts([Lc(-0.12, F, 2), Lc(0.12, F, 2), Lc(0.5, far, 0), Lc(-0.5, far, 0)]);
+
+          // rear face is the visible one (cars drive toward -x / -y): tail-light bar, plate
+          const rear = (u0: number, u1: number, z0: number, z1: number) => axis === 'x'
+            ? pts([Lc(hl[1], u0, z0), Lc(hl[1], u1, z0), Lc(hl[1], u1, z1), Lc(hl[1], u0, z1)])
+            : pts([Lc(u0, hl[3], z0), Lc(u1, hl[3], z0), Lc(u1, hl[3], z1), Lc(u0, hl[3], z1)]);
+          const sideP = (u0: number, u1: number, z0: number, z1: number) => axis === 'x'
+            ? pts([Lc(u0, hl[3], z0), Lc(u1, hl[3], z0), Lc(u1, hl[3], z1), Lc(u0, hl[3], z1)])
+            : pts([Lc(hl[1], u0, z0), Lc(hl[1], u1, z0), Lc(hl[1], u1, z1), Lc(hl[1], u0, z1)]);
+          const yc = col === '#f2b134' && type === 0;
+          const dl = [-hlen * 0.05, hlen * 0.55];
+          const dr = (u: number) => {
+            const a = axis === 'x' ? Lc(u, hl[3], 4) : Lc(hl[1], u, 4);
+            const b2 = axis === 'x' ? Lc(u, hl[3], cz0) : Lc(hl[1], u, cz0);
+            return 'M' + f(a[0]) + ' ' + f(a[1]) + 'L' + f(b2[0]) + ' ' + f(b2[1]);
+          };
+
           cars.push({
             tf: 'translate(' + f(p0[0]) + ',' + f(p0[1]) + ')',
             vals, kt, dur: Dd, begin: baseBegin - i * delta, isVan: van,
-            w1x: f(wa[0]), w1y: f(wa[1]), w2x: f(wb[0]), w2y: f(wb[1]),
-            hx: f(fr[0]), hy: f(fr[1]), tlx: f(bk[0]), tly: f(bk[1]), cone,
-            shadow: pts([Lc(hl[0] - 0.05, hl[2] - 0.05, 0), Lc(hl[1] + 0.05, hl[2] - 0.05, 0), Lc(hl[1] + 0.05, hl[3] + 0.05, 0), Lc(hl[0] - 0.05, hl[3] + 0.05, 0)]),
+            w1x: f(wc[0]), w1y: f(wc[1]), w2x: f(wa[0]), w2y: f(wa[1]), w3x: f(wb[0]), w3y: f(wb[1]),
+            hx: f(fr[0]), hy: f(fr[1]), cone,
             bl: bd.l, br: bd.r, bt: bd.t, cl: shade(col, 1.0), cr: shade(col, 0.78), ct: shade(col, 1.12),
-            kl: kb.l, kr: kb.r, kt2: kb.t
+            kl: kb.l, kr: kb.r, kt2: kb.t, gl: gk.l, gr: gk.r,
+            skirtL: sideP(-hlen, hlen, 3, 4.6), skirtR: rear(-hw, hw, 3, 4.6),
+            doors: dr(dl[0]) + dr(dl[1] - 0.25),
+            tl: rear(-hw + 0.03, hw - 0.03, 6.4, 8.2), plate: rear(-0.06, 0.06, 4.2, 5.4),
+            sign: yc ? box(-0.04, 0.04, -0.05, 0.05, cz1, cz1 + 2.2).t : ''
           });
         }
       }
     }
   }
 
-  cachedCityData = { roads, dashes, zebras, blocks, grass, plazas, scene, cars, glows, pinWalkers, pinData };
+  const vanLabels = cars.filter(c => c.isVan);
+
+  cachedCityData = { roads, dashes, zebras, blocks, grass, plazas, scene, cars, vanLabels, glows, pinWalkers, pinData };
   return cachedCityData;
 }
