@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
@@ -239,13 +239,7 @@ export default function BookingFlow({ category }: BookingFlowProps) {
   // Step 4: Estimate state
   const [estimate, setEstimate] = useState<PricingEstimateResponse | null>(null);
 
-  useEffect(() => {
-    if (step === 2) {
-      loadAddresses();
-    }
-  }, [step]);
-
-  const loadAddresses = async () => {
+  const loadAddresses = useCallback(async () => {
     try {
       const data = await getMyAddresses();
       setAddresses(data.items || []);
@@ -255,7 +249,13 @@ export default function BookingFlow({ category }: BookingFlowProps) {
     } catch (err) {
       console.error('Failed to load addresses:', err);
     }
-  };
+  }, [selectedAddressId]);
+
+  useEffect(() => {
+    if (step === 2) {
+      loadAddresses();
+    }
+  }, [step, loadAddresses]);
 
   const handleSelectIssue = (issue: IssueItem) => {
     setSelectedIssueId(issue.id);

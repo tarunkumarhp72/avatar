@@ -1,6 +1,29 @@
 // Deterministic procedural city geometry generator for Avatar 3D Animated Hero
 // Exact isometric projection and mathematical layout from the reference city model.
 
+export interface PinWalker {
+  id: string;
+  bb: string;
+  skin: string;
+  hair: string;
+  shirt: string;
+  pants: string;
+  hat: string;
+  brim: string;
+  bag: string;
+  vest: string;
+  apron: string;
+  ring: string;
+}
+
+export interface PinData {
+  route: Array<[number, number]>;
+  cum: number[];
+  len: number;
+  speed: number;
+  off: number;
+}
+
 export interface CityData {
   roads: Array<{ p: string }>;
   dashes: Array<{ x1: string; y1: string; x2: string; y2: string }>;
@@ -37,6 +60,8 @@ export interface CityData {
   }>;
   scene: Array<any>;
   glows: Array<{ cx: string; cy: string }>;
+  pinWalkers: PinWalker[];
+  pinData: PinData[];
 }
 
 let cachedCityData: CityData | null = null;
@@ -72,8 +97,10 @@ export function getCityData(): CityData {
     return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
   };
 
-  const visible = (x: number, y: number, mx: number, my: number) =>
+  const visOld = (x: number, y: number, mx: number, my: number) =>
     x > -mx && x < 1440 + mx && y > -my && y < 800 + my;
+  const visible = (x: number, y: number, mx: number, my: number) =>
+    x > -180 - mx && x < 1620 + mx && y > -100 - my && y < 900 + my;
   const pick = <T>(a: T[]): T => a[Math.floor(R() * a.length)];
 
   const KMIN = -4, KMAX = 11, A0 = -30, A1 = 75;
@@ -134,23 +161,23 @@ export function getCityData(): CityData {
     { l: '#e9d6a6', r: '#cdb882', t: '#f4e6bd' },
     { l: '#6a7099', r: '#4f557c', t: '#858bb3' },
     { l: '#bfb4a8', r: '#a09486', t: '#d6ccc0' },
-    { l: '#8fb6d6', r: '#6f98b9', t: '#a9c9e2' },
+    { l: '#8fb6d6', r: '#6f98b9', t: '#a9c9e2' }
   ];
   const roofs = ['#c9503f', '#a8443a', '#4f77a8', '#6b5a52'];
   const awns = ['#c9503f', '#2f7d6d', '#3b78c4', '#e8a020'];
 
   const hull = (ps: Array<[number, number]>) => {
-    const s = ps.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const sorted = ps.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
     const cr = (o: [number, number], a: [number, number], b: [number, number]) =>
       (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
     const lo: Array<[number, number]> = [];
-    for (const p of s) {
+    for (const p of sorted) {
       while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop();
       lo.push(p);
     }
     const up: Array<[number, number]> = [];
-    for (let i = s.length - 1; i >= 0; i--) {
-      const p = s[i];
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const p = sorted[i];
       while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop();
       up.push(p);
     }
@@ -171,7 +198,7 @@ export function getCityData(): CityData {
     return {
       act: pts([P(ax, ay, h + ah), P(ax + aw, ay, h + ah), P(ax + aw, ay + ad, h + ah), P(ax, ay + ad, h + ah)]),
       acl: pts([P(ax, ay + ad, h), P(ax + aw, ay + ad, h), P(ax + aw, ay + ad, h + ah), P(ax, ay + ad, h + ah)]),
-      acr: pts([P(ax + aw, ay, h), P(ax + aw, ay + ad, h), P(ax + aw, ay + ad, h + ah), P(ax + aw, ay, h + ah)]),
+      acr: pts([P(ax + aw, ay, h), P(ax + aw, ay + ad, h), P(ax + aw, ay + ad, h + ah), P(ax + aw, ay, h + ah)])
     };
   };
 
@@ -193,9 +220,9 @@ export function getCityData(): CityData {
         const q: Array<[number, number]> = face === 'L'
           ? [P(x + ua, y + d, za), P(x + ub, y + d, za), P(x + ub, y + d, zb), P(x + ua, y + d, zb)]
           : [P(x + w, y + ua, za), P(x + w, y + ub, za), P(x + w, y + ub, zb), P(x + w, y + ua, zb)];
-        const s = pd(q);
-        on += s;
-        if (R() < 0.4) off += s;
+        const sq = pd(q);
+        on += sq;
+        if (R() < 0.4) off += sq;
       }
     }
     return [on, off];
@@ -213,7 +240,7 @@ export function getCityData(): CityData {
     sc: '1.3', fl: '1 1;-1 1', pants: '', hair: '', bag: 'none', vest: 'none', apron: 'none', brim: 'none', ld: '16'
   }, o);
 
-  const scene: any[] = [];
+  const scene: Array<any> = [];
   const blocks: Array<{ p: string }> = [];
   const grass: Array<{ p: string; c: string }> = [];
   const plazas: Array<{ p: string }> = [];
@@ -246,8 +273,10 @@ export function getCityData(): CityData {
     }));
   };
 
-  const skins = ['#f1c8a5', '#d9a27a', '#b57a52'], hairs = ['#2a2320', '#5a3a22', '#1c1c24'];
+  const skins = ['#f1c8a5', '#d9a27a', '#b57a52'];
+  const hairs = ['#2a2320', '#5a3a22', '#1c1c24'];
   const shirts = ['#d95a4a', '#3d6fb5', '#f2c230', '#f4f4f0', '#2f9e6d', '#8a5bc4'];
+
   const walker = (gx0: number, gy0: number, gx1: number, gy1: number) => {
     const a = P(gx0, gy0), b = P(gx1, gy1);
     const r = R();
@@ -270,94 +299,146 @@ export function getCityData(): CityData {
     }));
   };
 
-  for (let bi = KMIN; bi <= KMAX; bi++) {
-    for (let bj = KMIN; bj <= KMAX; bj++) {
-      const x0 = 5 * bi + 1, y0 = 5 * bj + 1;
-      const c = P(x0 + 2, y0 + 2);
-      if (!visible(c[0], c[1], 150, 90)) continue;
-      blocks.push({ p: pts([P(x0 - 0.05, y0 - 0.05), P(x0 + 4.05, y0 - 0.05), P(x0 + 4.05, y0 + 4.05), P(x0 - 0.05, y0 + 4.05)]) });
-      grass.push({ p: pts([P(x0 + 0.3, y0 + 0.3), P(x0 + 3.7, y0 + 0.3), P(x0 + 3.7, y0 + 3.7), P(x0 + 0.3, y0 + 3.7)]), c: (bi + bj) % 2 ? '#86c45a' : '#7fbe55' });
+  const PIN_DEF = [
+    { name: 'PLUMBER', bi: 0, bj: 3, speed: 12, off: 0.05 },
+    { name: 'MAID', bi: 2, bj: -1, speed: 11, off: 0.4 },
+    { name: 'ELECTRICIAN', bi: 2, bj: 0, speed: 13, off: 0.7 },
+    { name: 'MECHANIC', bi: 1, bj: 4, speed: 11.5, off: 0.2 },
+    { name: 'CARPENTER', bi: 4, bj: 1, speed: 12.5, off: 0.55 }
+  ];
+  const pinBlocks: Record<string, number> = {};
+  PIN_DEF.forEach((d, i) => { pinBlocks[d.bi + ',' + d.bj] = i; });
 
-      lamp(x0 + 3.9, y0 + 2);
-      lamp(x0 + 2, y0 + 3.9);
-      if (R() < 0.5) light(x0 + 3.9, y0 + 0.1);
+  let savedS = 0;
+  for (let pass = 0; pass < 2; pass++) {
+    if (pass === 1) { savedS = s; s = 77777; }
+    for (let bi = KMIN; bi <= KMAX; bi++) {
+      for (let bj = KMIN; bj <= KMAX; bj++) {
+        const x0 = 5 * bi + 1, y0 = 5 * bj + 1;
+        const c = P(x0 + 2, y0 + 2);
+        if (pass === 0 ? !visOld(c[0], c[1], 150, 90) : (visOld(c[0], c[1], 150, 90) || !visible(c[0], c[1], 150, 90))) continue;
+        const pinIdx = pinBlocks[bi + ',' + bj];
+        blocks.push({ p: pts([P(x0 - 0.05, y0 - 0.05), P(x0 + 4.05, y0 - 0.05), P(x0 + 4.05, y0 + 4.05), P(x0 - 0.05, y0 + 4.05)]) });
+        grass.push({ p: pts([P(x0 + 0.3, y0 + 0.3), P(x0 + 3.7, y0 + 0.3), P(x0 + 3.7, y0 + 3.7), P(x0 + 0.3, y0 + 3.7)]), c: (bi + bj) % 2 ? '#86c45a' : '#7fbe55' });
 
-      if (bi === 2 && bj === 2) {
-        plazas.push({ p: pts([P(x0 + 0.65, y0 + 0.65), P(x0 + 3.35, y0 + 0.65), P(x0 + 3.35, y0 + 3.35), P(x0 + 0.65, y0 + 3.35)]) });
-        const fc = P(x0 + 2, y0 + 2, 0);
-        scene.push(mk({ isFountain: true, depth: x0 + y0 + 4, cx: fc[0], by: fc[1], px: fc[0] - 3, py: fc[1] - 20, sp: fc[1] - 26 }));
-        tree(x0 + 0.5, y0 + 0.5); tree(x0 + 3.5, y0 + 0.5); tree(x0 + 0.5, y0 + 3.5); tree(x0 + 3.5, y0 + 3.5);
-        tree(x0 + 2, y0 + 0.45); tree(x0 + 0.45, y0 + 2);
-        walker(x0 + 1, y0 + 1, x0 + 3, y0 + 1.2);
-        continue;
-      }
+        lamp(x0 + 3.9, y0 + 2);
+        lamp(x0 + 2, y0 + 3.9);
+        if (R() < 0.5) light(x0 + 3.9, y0 + 0.1);
 
-      for (let li = 0; li < 2; li++) {
-        for (let lj = 0; lj < 2; lj++) {
-          const lx = x0 + li * 2, ly = y0 + lj * 2, t = R();
-          if (t < 0.22) {
-            tree(lx + 0.6, ly + 0.6); tree(lx + 1.4, ly + 1.2);
-            if (R() < 0.5) tree(lx + 1.1, ly + 0.5);
-            continue;
-          }
-          const house = t > 0.6;
-          const w = 1.0 + R() * 0.3, d = 1.0 + R() * 0.3;
-          const x = lx + (2 - w) / 2, y = ly + (2 - d) / 2;
-          const cp = pick(pal);
-          if (!house) {
-            const h = 40 + R() * 50, m = 0.14;
-            const rows = Math.max(0, Math.floor((h - 21) / 15));
-            const wl = wins(x, y, w, d, h, 'L', rows, 16), wr = wins(x, y, w, d, h, 'R', rows, 16);
-            let awnA = '', awnB = '';
-            for (let i = 0; i < 6; i++) {
-              const u0 = w * 0.08 + (w * 0.84 * i) / 6, u1 = w * 0.08 + (w * 0.84 * (i + 1)) / 6;
-              const q = pd([P(x + u0, y + d, 14), P(x + u1, y + d, 14), P(x + u1, y + d + 0.16, 10), P(x + u0, y + d + 0.16, 10)]);
-              if (i % 2) awnB += q; else awnA += q;
-            }
-            scene.push(mk({
-              isBldg: true, depth: x + w / 2 + y + d / 2,
-              left: pts([P(x, y + d, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x, y + d, h)]),
-              right: pts([P(x + w, y, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x + w, y, h)]),
-              top: pts([P(x, y, h), P(x + w, y, h), P(x + w, y + d, h), P(x, y + d, h)]),
-              topIn: pts([P(x + m, y + m, h), P(x + w - m, y + m, h), P(x + w - m, y + d - m, h), P(x + m, y + d - m, h)]),
-              cl: cp.l, cr: cp.r, ct: cp.t, ctIn: shade(cp.t, 0.92),
-              winL: wl[0], winLo: wl[1], winR: wr[0], winRo: wr[1],
-              shadow: shadowOf(x, y, w, d, h),
-              cornL: pts([P(x, y + d, h - 4), P(x + w, y + d, h - 4), P(x + w, y + d, h), P(x, y + d, h)]),
-              cornR: pts([P(x + w, y, h - 4), P(x + w, y + d, h - 4), P(x + w, y + d, h), P(x + w, y, h)]),
-              shop: pd([P(x + w * 0.08, y + d, 1), P(x + w * 0.38, y + d, 1), P(x + w * 0.38, y + d, 10), P(x + w * 0.08, y + d, 10)]) + pd([P(x + w * 0.62, y + d, 1), P(x + w * 0.92, y + d, 1), P(x + w * 0.92, y + d, 10), P(x + w * 0.62, y + d, 10)]),
-              awnA, awnB, awnC: pick(awns),
-              door: pts([P(x + w * 0.42, y + d, 0), P(x + w * 0.58, y + d, 0), P(x + w * 0.58, y + d, 10), P(x + w * 0.42, y + d, 10)]),
-              edge: ln(P(x + w, y + d, 2), P(x + w, y + d, h - 2)),
-              ...roofTank(x, y, w, d, h),
-              ...roofAC(x, y, w, d, h),
-              fd: (2.5 + R() * 3).toFixed(1), fb: (-R() * 5).toFixed(1)
-            }));
-          } else {
-            const h = 24 + R() * 8, rh = 14 + R() * 7, mid = y + d / 2;
-            const B = P(x + w, mid, h + rh);
-            const wl = wins(x, y, w, d, h, 'L', 1, 8), wr = wins(x, y, w, d, h, 'R', 1, 8);
-            scene.push(mk({
-              isHouse: true, depth: x + w / 2 + y + d / 2,
-              left: pts([P(x, y + d, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x, y + d, h)]),
-              right: pts([P(x + w, y, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x + w, y, h)]),
-              gable: pts([P(x + w, y, h), P(x + w, y + d, h), B]),
-              roof: pts([P(x - 0.08, y + d + 0.08, h - 1), P(x + w + 0.08, y + d + 0.08, h - 1), P(x + w + 0.08, mid, h + rh), P(x - 0.08, mid, h + rh)]),
-              cl: cp.l, cr: cp.r, roofC: pick(roofs), shadow: shadowOf(x, y, w, d, h + rh * 0.6),
-              winL: wl[0], winLo: wl[1], winR: wr[0], winRo: wr[1],
-              door: pts([P(x + w * 0.42, y + d, 0), P(x + w * 0.58, y + d, 0), P(x + w * 0.58, y + d, 12), P(x + w * 0.42, y + d, 12)]),
-              edge: ln(P(x - 0.08, mid, h + rh), P(x + w + 0.08, mid, h + rh))
-            }));
-          }
-          if (R() < 0.35) tree(lx + 0.18, ly + 1.85);
+        if (bi === 2 && bj === 2) {
+          plazas.push({ p: pts([P(x0 + 0.65, y0 + 0.65), P(x0 + 3.35, y0 + 0.65), P(x0 + 3.35, y0 + 3.35), P(x0 + 0.65, y0 + 3.35)]) });
+          const fc = P(x0 + 2, y0 + 2, 0);
+          scene.push(mk({ isFountain: true, depth: x0 + y0 + 4, cx: fc[0], by: fc[1], px: fc[0] - 3, py: fc[1] - 20, sp: fc[1] - 26 }));
+          tree(x0 + 0.5, y0 + 0.5); tree(x0 + 3.5, y0 + 0.5); tree(x0 + 0.5, y0 + 3.5); tree(x0 + 3.5, y0 + 3.5);
+          tree(x0 + 2, y0 + 0.45); tree(x0 + 0.45, y0 + 2);
+          walker(x0 + 1, y0 + 1, x0 + 3, y0 + 1.2);
+          continue;
         }
-      }
 
-      const wr = R();
-      if (wr < 0.35) walker(x0 + 3.88, y0 + 0.2, x0 + 3.88, y0 + 3.8);
-      else if (wr < 0.6) walker(x0 + 0.2, y0 + 3.88, x0 + 3.8, y0 + 3.88);
+        for (let li = 0; li < 2; li++) {
+          for (let lj = 0; lj < 2; lj++) {
+            const lx = x0 + li * 2, ly = y0 + lj * 2, t = R();
+            if (t < 0.22) {
+              tree(lx + 0.6, ly + 0.6); tree(lx + 1.4, ly + 1.2);
+              if (R() < 0.5) tree(lx + 1.1, ly + 0.5);
+              continue;
+            }
+            const house = t > 0.6;
+            const w = 1.0 + R() * 0.3, d = 1.0 + R() * 0.3;
+            const x = lx + (2 - w) / 2, y = ly + (2 - d) / 2;
+            const cp = pick(pal);
+            if (!house) {
+              const h = 40 + R() * 50, m = 0.14;
+              const rows = Math.max(0, Math.floor((h - 21) / 15));
+              const wl = wins(x, y, w, d, h, 'L', rows, 16), wr = wins(x, y, w, d, h, 'R', rows, 16);
+              let awnA = '', awnB = '';
+              for (let i = 0; i < 6; i++) {
+                const u0 = w * 0.08 + (w * 0.84 * i) / 6, u1 = w * 0.08 + (w * 0.84 * (i + 1)) / 6;
+                const q = pd([P(x + u0, y + d, 14), P(x + u1, y + d, 14), P(x + u1, y + d + 0.16, 10), P(x + u0, y + d + 0.16, 10)]);
+                if (i % 2) awnB += q; else awnA += q;
+              }
+              scene.push(mk({
+                isBldg: true, depth: x + w / 2 + y + d / 2,
+                left: pts([P(x, y + d, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x, y + d, h)]),
+                right: pts([P(x + w, y, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x + w, y, h)]),
+                top: pts([P(x, y, h), P(x + w, y, h), P(x + w, y + d, h), P(x, y + d, h)]),
+                topIn: pts([P(x + m, y + m, h), P(x + w - m, y + m, h), P(x + w - m, y + d - m, h), P(x + m, y + d - m, h)]),
+                cl: cp.l, cr: cp.r, ct: cp.t, ctIn: shade(cp.t, 0.92),
+                winL: wl[0], winLo: wl[1], winR: wr[0], winRo: wr[1],
+                shadow: shadowOf(x, y, w, d, h),
+                cornL: pts([P(x, y + d, h - 4), P(x + w, y + d, h - 4), P(x + w, y + d, h), P(x, y + d, h)]),
+                cornR: pts([P(x + w, y, h - 4), P(x + w, y + d, h - 4), P(x + w, y + d, h), P(x + w, y, h)]),
+                shop: pd([P(x + w * 0.08, y + d, 1), P(x + w * 0.38, y + d, 1), P(x + w * 0.38, y + d, 10), P(x + w * 0.08, y + d, 10)]) + pd([P(x + w * 0.62, y + d, 1), P(x + w * 0.92, y + d, 1), P(x + w * 0.92, y + d, 10), P(x + w * 0.62, y + d, 10)]),
+                awnA, awnB, awnC: pick(awns),
+                door: pts([P(x + w * 0.42, y + d, 0), P(x + w * 0.58, y + d, 0), P(x + w * 0.58, y + d, 10), P(x + w * 0.42, y + d, 10)]),
+                edge: ln(P(x + w, y + d, 2), P(x + w, y + d, h - 2)),
+                ...roofTank(x, y, w, d, h),
+                ...roofAC(x, y, w, d, h),
+                fd: (2.5 + R() * 3).toFixed(1), fb: (-R() * 5).toFixed(1)
+              }));
+            } else {
+              const h = 24 + R() * 8, rh = 14 + R() * 7, mid = y + d / 2;
+              const B = P(x + w, mid, h + rh);
+              const wl = wins(x, y, w, d, h, 'L', 1, 8), wr = wins(x, y, w, d, h, 'R', 1, 8);
+              scene.push(mk({
+                isHouse: true, depth: x + w / 2 + y + d / 2,
+                left: pts([P(x, y + d, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x, y + d, h)]),
+                right: pts([P(x + w, y, 0), P(x + w, y + d, 0), P(x + w, y + d, h), P(x + w, y, h)]),
+                gable: pts([P(x + w, y, h), P(x + w, y + d, h), B]),
+                roof: pts([P(x - 0.08, y + d + 0.08, h - 1), P(x + w + 0.08, y + d + 0.08, h - 1), P(x + w + 0.08, mid, h + rh), P(x - 0.08, mid, h + rh)]),
+                cl: cp.l, cr: cp.r, roofC: pick(roofs), shadow: shadowOf(x, y, w, d, h + rh * 0.6),
+                winL: wl[0], winLo: wl[1], winR: wr[0], winRo: wr[1],
+                door: pts([P(x + w * 0.42, y + d, 0), P(x + w * 0.58, y + d, 0), P(x + w * 0.58, y + d, 12), P(x + w * 0.42, y + d, 12)]),
+                edge: ln(P(x - 0.08, mid, h + rh), P(x + w + 0.08, mid, h + rh))
+              }));
+            }
+            if (R() < 0.35) tree(lx + 0.18, ly + 1.85);
+          }
+        }
+
+        const wr = R();
+        const nPre = scene.length;
+        if (wr < 0.35) walker(x0 + 3.88, y0 + 0.2, x0 + 3.88, y0 + 3.8);
+        else if (wr < 0.6) walker(x0 + 0.2, y0 + 3.88, x0 + 3.8, y0 + 3.88);
+        if (pinIdx !== undefined) scene.length = nPre;
+      }
     }
+    if (pass === 1) s = savedS;
   }
+
+  const PIN_LOOKS = [
+    { shirt: '#3d6fb5', pants: '#2c3350', hat: '#2b3a66', brim: 'none', bag: '#d95a4a', vest: 'none', apron: 'none', ring: '#2fbf71' },
+    { shirt: '#2b2f3a', pants: '#2b2f3a', hat: '#ffffff', brim: 'none', bag: 'none', vest: 'none', apron: '#f4f4f0', ring: '#ffffff' },
+    { shirt: '#3d6fb5', pants: '#2c3350', hat: '#f2c230', brim: '#f2c230', bag: 'none', vest: '#d6f03a', apron: 'none', ring: '#fbb43c' },
+    { shirt: '#4a5568', pants: '#2c3350', hat: '#d9483b', brim: '#d9483b', bag: '#222a3a', vest: 'none', apron: 'none', ring: '#e5484d' },
+    { shirt: '#b07a3a', pants: '#5b4a3a', hat: '#5a3a22', brim: 'none', bag: 'none', vest: 'none', apron: '#c9a56a', ring: '#ffffff' }
+  ];
+
+  const pinWalkers: PinWalker[] = [];
+  const pinData: PinData[] = [];
+  PIN_DEF.forEach((d, i) => {
+    const px0 = 5 * d.bi + 1, py0 = 5 * d.bj + 1, pm = 0.14, pe = 4 - pm;
+    const rt: Array<[number, number]> = [
+      P(px0 + pm, py0 + pm),
+      P(px0 + pe, py0 + pm),
+      P(px0 + pe, py0 + pe),
+      P(px0 + pm, py0 + pe),
+      P(px0 + pm, py0 + pm)
+    ];
+    const cum = [0];
+    for (let k = 1; k < rt.length; k++) {
+      cum.push(cum[k - 1] + Math.hypot(rt[k][0] - rt[k - 1][0], rt[k][1] - rt[k - 1][1]));
+    }
+    const len = cum[cum.length - 1];
+    pinData.push({ route: rt, cum, len, speed: d.speed, off: d.off * len });
+    pinWalkers.push({
+      id: 'pw' + i,
+      bb: (-0.13 * i).toFixed(2),
+      skin: skins[i % 3],
+      hair: hairs[i % 3],
+      ...PIN_LOOKS[i]
+    });
+  });
 
   scene.sort((a, b) => a.depth - b.depth);
 
@@ -453,6 +534,6 @@ export function getCityData(): CityData {
     }
   }
 
-  cachedCityData = { roads, dashes, zebras, blocks, grass, plazas, scene, cars, glows };
+  cachedCityData = { roads, dashes, zebras, blocks, grass, plazas, scene, cars, glows, pinWalkers, pinData };
   return cachedCityData;
 }

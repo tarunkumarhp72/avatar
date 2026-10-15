@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCityData } from './cityGeometry';
@@ -9,7 +9,6 @@ import styles from './CityHero.module.css';
 export default function CityHero() {
   const router = useRouter();
   const [mode, setMode] = useState<'day' | 'night'>('day');
-  const [parallax, setParallax] = useState({ nx: 0, ny: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('plumber');
 
@@ -35,7 +34,6 @@ export default function CityHero() {
       };
 
   const accent = '#E59A1F';
-  const par = `translate(720 400) scale(1.04) translate(-720 -400) translate(${(-parallax.nx * 16).toFixed(1)} ${(-parallax.ny * 9).toFixed(1)})`;
   const wf = isNight ? 'url(#glassNight)' : 'url(#glassDay)';
   const offF = isNight ? 'url(#glassOff)' : 'none';
   const wv = isNight ? '1;0.4;1' : '1;0.85;1';
@@ -45,17 +43,207 @@ export default function CityHero() {
   const sunOp = isNight ? '0' : '1';
   const lampOp = isNight ? '0.95' : '0';
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const x = Math.round(((e.clientX - r.left) / r.width - 0.5) * 10) / 10;
-    const y = Math.round(((e.clientY - r.top) / r.height - 0.5) * 10) / 10;
-    if (x !== parallax.nx || y !== parallax.ny) {
-      setParallax({ nx: x, ny: y });
+  // Camera & Interaction Refs
+  const stageRef = useRef<HTMLElement | null>(null);
+  const camRef = useRef({ z: 1, cx: 720, cy: 400 });
+  const tgtRef = useRef({ z: 1, cx: 720, cy: 400 });
+  const dragRef = useRef<{ x: number; y: number } | null>(null);
+  const rafRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
+
+  // Viewport calculation matching Main.dc.html
+  const getVM = useCallback(() => {
+    const el = stageRef.current;
+    if (!el) return { r: { left: 0, top: 0, width: 1440, height: 800 }, s: 1, ox: 0, oy: 0 };
+    const r = el.getBoundingClientRect();
+    const s = Math.max(r.width / 1440, r.height / 800);
+    return {
+      r,
+      s,
+      ox: (r.width - 1440 * s) / 2,
+      oy: (r.height - 800 * s) / 2,
+    };
+  }, []);
+
+  const clampTgt = useCallback(() => {
+    const m = getVM();
+    const tgt = tgtRef.current;
+    const hw = m.r.width / m.s / 2 / tgt.z;
+    const hh = m.r.height / m.s / 2 / tgt.z;
+    const x0 = -180 + hw;
+    const x1 = 1620 - hw;
+    const y0 = -100 + hh;
+    const y1 = 900 - hh;
+    tgt.cx = x0 > x1 ? 720 : Math.min(x1, Math.max(x0, tgt.cx));
+    tgt.cy = y0 > y1 ? 400 : Math.min(y1, Math.max(y0, tgt.cy));
+  }, [getVM]);
+
+  const zoomAt = useCallback(
+    (clientX: number, clientY: number, nz: number, minZ = 0.8) => {
+      const tgt = tgtRef.current;
+      const m = getVM();
+      nz = Math.min(3, Math.max(minZ, nz));
+      if (nz === tgt.z) return;
+      const qx = (clientX - m.r.left - m.ox) / m.s;
+      const qy = (clientY - m.r.top - m.oy) / m.s;
+      const wx = tgt.cx + (qx - 720) / tgt.z;
+      const wy = tgt.cy + (qy - 400) / tgt.z;
+      tgt.z = nz;
+      tgt.cx = wx - (qx - 720) / nz;
+      tgt.cy = wy - (qy - 400) / nz;
+      clampTgt();
+    },
+    [getVM, clampTgt]
+  );
+
+  const zoomBy = useCallback(
+    (factor: number) => {
+      const tgt = tgtRef.current;
+      tgt.z = Math.min(3, Math.max(0.8, tgt.z * factor));
+      clampTgt();
+    },
+    [clampTgt]
+  );
+
+  const zoomFit = useCallback(() => {
+    tgtRef.current.z = 1;
+    tgtRef.current.cx = 720;
+    tgtRef.current.cy = 400;
+  }, []);
+
+  // Set up RAF Animation Loop for smooth camera pan/zoom & live pin tracking
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+
+    let reduceMotion = false;
+    try {
+      reduceMotion = !!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch {
+      // ignore
+    }
+
+    const pd = city.pinData;
+
+    const tick = (now: number) => {
+      rafRef.current = requestAnimationFrame(tick);
+      const dt = lastTimeRef.current ? Math.min(0.05, (now - lastTimeRef.current) / 1000) : 0.016;
+      lastTimeRef.current = now;
+
+      const c = camRef.current;
+      const t = tgtRef.current;
+      const k = 1 - Math.exp(-dt * 14);
+      c.z += (t.z - c.z) * k;
+      c.cx += (t.cx - c.cx) * k;
+      c.cy += (t.cy - c.cy) * k;
+
+      const tr = `translate(720 400) scale(${c.z.toFixed(4)}) translate(${(-c.cx).toFixed(2)} ${(-c.cy).toFixed(2)})`;
+      const gw = document.getElementById('city-world');
+      const gg = document.getElementById('city-glow');
+      if (gw && gw.getAttribute('transform') !== tr) gw.setAttribute('transform', tr);
+      if (gg && gg.getAttribute('transform') !== tr) gg.setAttribute('transform', tr);
+
+      if (!pd) return;
+      const m = getVM();
+      const tm = reduceMotion ? 0 : now / 1000;
+
+      for (let i = 0; i < pd.length; i++) {
+        const p = pd[i];
+        const d = (((tm * p.speed + p.off) % p.len) + p.len) % p.len;
+        let j = 0;
+        while (j < p.route.length - 2 && d > p.cum[j + 1]) j++;
+        const a = p.route[j];
+        const b = p.route[j + 1];
+        const segLen = p.cum[j + 1] - p.cum[j];
+        const u = segLen > 0 ? (d - p.cum[j]) / segLen : 0;
+        const wx = a[0] + (b[0] - a[0]) * u;
+        const wy = a[1] + (b[1] - a[1]) * u;
+
+        const ew = document.getElementById(`pw${i}`);
+        if (ew) {
+          const v = `translate(${wx.toFixed(1)} ${wy.toFixed(1)})`;
+          if (ew.getAttribute('transform') !== v) ew.setAttribute('transform', v);
+        }
+
+        const ef = document.getElementById(`pw${i}f`);
+        if (ef) {
+          const want = b[0] < a[0] ? 'scale(-1.45 1.45)' : 'scale(1.45 1.45)';
+          if (ef.getAttribute('transform') !== want) ef.setAttribute('transform', want);
+        }
+
+        const px = m.ox + m.s * (720 + c.z * (wx - c.cx));
+        const py = m.oy + m.s * (400 + c.z * (wy - c.cy)) - 2;
+        const ep = document.getElementById(`pin-${i}`);
+        if (ep) {
+          const v2 = `translate(${px.toFixed(1)}px, ${py.toFixed(1)}px)`;
+          if (ep.style.transform !== v2) ep.style.transform = v2;
+        }
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+
+    // Wheel zooming with passive: false to allow e.preventDefault()
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-card]')) return;
+
+      const tgt = tgtRef.current;
+      const pinch = e.ctrlKey || e.metaKey;
+      if (!pinch && e.deltaY > 0 && tgt.z <= 1.001) return;
+
+      e.preventDefault();
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1);
+      zoomAt(e.clientX, e.clientY, tgt.z * Math.exp(-dy * (pinch ? 0.01 : 0.0016)), pinch ? 0.8 : 1);
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, [city, getVM, zoomAt]);
+
+  // Pointer event handlers for pan dragging
+  const handlePointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement | null;
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (target?.closest('button, input, select, a, [data-card]')) return;
+
+    dragRef.current = { x: e.clientX, y: e.clientY };
+    if (stageRef.current) {
+      stageRef.current.style.cursor = 'grabbing';
+      try {
+        stageRef.current.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
     }
   };
 
-  const handleMouseLeave = () => {
-    setParallax({ nx: 0, ny: 0 });
+  const handlePointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (!dragRef.current) return;
+    const m = getVM();
+    const tgt = tgtRef.current;
+    tgt.cx -= (e.clientX - dragRef.current.x) / (m.s * tgt.z);
+    tgt.cy -= (e.clientY - dragRef.current.y) / (m.s * tgt.z);
+    dragRef.current.x = e.clientX;
+    dragRef.current.y = e.clientY;
+    clampTgt();
+  };
+
+  const handlePointerUp = () => {
+    dragRef.current = null;
+    if (stageRef.current) {
+      stageRef.current.style.cursor = 'grab';
+    }
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button, input, select, a, [data-card]')) return;
+    zoomAt(e.clientX, e.clientY, tgtRef.current.z * 1.7, 0.8);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -133,12 +321,17 @@ export default function CityHero() {
         </div>
       </header>
 
-      {/* Main Interactive Animated Stage */}
+      {/* Main Interactive Isometric Stage with Real-Time Pan/Zoom */}
       <section
+        id="hero-city"
+        ref={stageRef}
         className={styles.stageSection}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        aria-label="Interactive animated city stage"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onDoubleClick={handleDoubleClick}
+        aria-label="Interactive animated city stage. Click and drag to pan, scroll to zoom."
       >
         <svg
           viewBox="0 0 1440 800"
@@ -187,8 +380,8 @@ export default function CityHero() {
           {/* Grass Background */}
           <rect x="0" y="0" width="1440" height="800" fill="#86c45a" />
 
-          {/* Parallax Isometric City Elements */}
-          <g transform={par}>
+          {/* Camera World Group with Smooth RAF Transform */}
+          <g id="city-world" transform="translate(0 0)">
             {/* Base Blocks */}
             {city.blocks.map((b, i) => (
               <polygon key={`b-${i}`} points={b.p} fill="#d9d3c5" />
@@ -251,6 +444,50 @@ export default function CityHero() {
                       </text>
                     </g>
                   )}
+                </g>
+              </g>
+            ))}
+
+            {/* Service Specialist Walkers (Animated along Block Routes) */}
+            {city.pinWalkers.map((pw) => (
+              <g key={pw.id} id={pw.id} transform="translate(-9999 -9999)">
+                <ellipse cx="0" cy="0" rx="10" ry="4.4" fill="none" stroke={pw.ring} strokeWidth="1.6" opacity="0.85" />
+                <ellipse cx="0" cy="0" rx="7" ry="3" fill="rgba(10,20,10,0.3)" />
+                <g>
+                  <animateTransform attributeName="transform" type="translate" values="0 0;0 -1.4;0 0" dur="0.5s" begin={`${pw.bb}s`} repeatCount="indefinite" />
+                  <g id={`${pw.id}f`} transform="scale(1.45 1.45)">
+                    <g>
+                      <animateTransform attributeName="transform" type="rotate" values="-22 -1.7 -8;22 -1.7 -8;-22 -1.7 -8" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
+                      <rect x="-2.8" y="-8" width="2.2" height="7.6" rx="1" fill={pw.pants} />
+                      <ellipse cx="-1.1" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
+                    </g>
+                    <rect x="-6.2" y="-16.5" width="3" height="7.5" rx="1" fill={pw.bag} />
+                    <rect x="-1" y="-18.8" width="2" height="2.4" fill={pw.skin} />
+                    <rect x="-3.6" y="-17.5" width="7.2" height="10.5" rx="2.4" fill={pw.shirt} />
+                    <rect x="0.4" y="-17.5" width="3.2" height="10.5" rx="1.6" fill="rgba(0,0,0,0.16)" />
+                    <rect x="-3.6" y="-16.2" width="7.2" height="2.2" fill={pw.vest} />
+                    <rect x="-2.6" y="-13" width="5.2" height="6" rx="1" fill={pw.apron} />
+                    <g>
+                      <animateTransform attributeName="transform" type="rotate" values="22 1.7 -8;-22 1.7 -8;22 1.7 -8" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
+                      <rect x="0.6" y="-8" width="2.2" height="7.6" rx="1" fill={pw.pants} />
+                      <ellipse cx="1.9" cy="-0.4" rx="2.4" ry="1.1" fill="#1c1c24" />
+                    </g>
+                    <g>
+                      <animateTransform attributeName="transform" type="rotate" values="20 -3.7 -16.5;-20 -3.7 -16.5;20 -3.7 -16.5" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
+                      <rect x="-5" y="-17" width="1.7" height="7.2" rx="0.8" fill={pw.shirt} />
+                      <circle cx="-4.15" cy="-9.4" r="1.15" fill={pw.skin} />
+                    </g>
+                    <g>
+                      <animateTransform attributeName="transform" type="rotate" values="-20 3.7 -16.5;20 3.7 -16.5;-20 3.7 -16.5" dur="1s" begin={`${pw.bb}s`} repeatCount="indefinite" />
+                      <rect x="3.3" y="-17" width="1.7" height="7.2" rx="0.8" fill={pw.shirt} />
+                      <circle cx="4.15" cy="-9.4" r="1.15" fill={pw.skin} />
+                    </g>
+                    <rect x="-3.9" y="-22.2" width="2.4" height="3.6" rx="1.1" fill={pw.hair} />
+                    <circle cx="0" cy="-21" r="3.6" fill={pw.skin} />
+                    <circle cx="1.9" cy="-21.2" r="0.55" fill="#1a1a1a" />
+                    <path d="M-4 -21.6 A4 4 0 0 1 4 -21.6 Z" fill={pw.hat} />
+                    <rect x="-4.4" y="-22.5" width="9.4" height="1.1" rx="0.5" fill={pw.brim} />
+                  </g>
                 </g>
               </g>
             ))}
@@ -466,213 +703,270 @@ export default function CityHero() {
             style={{ mixBlendMode: 'multiply', pointerEvents: 'none', transition: 'opacity 0.8s ease' }}
           />
 
-          {/* Streetlamp Glow Halos */}
-          <g transform={par} style={{ pointerEvents: 'none' }}>
+          {/* Streetlamp Glow Halos (Transformed with Camera) */}
+          <g id="city-glow" transform="translate(0 0)" style={{ pointerEvents: 'none' }}>
             {city.glows.map((gl, i) => (
               <circle key={`gl-${i}`} cx={gl.cx} cy={gl.cy} r="40" fill="url(#lampGlow)" opacity={lampOp} style={{ mixBlendMode: 'screen' }} />
             ))}
           </g>
         </svg>
 
-        {/* Floating Pin 1: Plumber */}
-        <div style={{ position: 'absolute', left: '20%', top: '41%', width: 0, height: 0 }}>
-          <div className={styles.pinbob}>
-            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button
-                type="button"
-                className={styles.pill}
-                onClick={() => router.push('/book/plumber')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  minHeight: '44px',
-                  padding: '0 16px',
-                  border: 0,
-                  borderRadius: '999px',
-                  backgroundColor: t.card,
-                  color: t.text,
-                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                  letterSpacing: '0.05em',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 2.7s6 6.3 6 10.6a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7z" />
-                </svg>
-                <span>PLUMBER</span>
-                <span style={{ fontWeight: 600, opacity: 0.65 }}>• 3 Nearby</span>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
-              </button>
-              <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
-              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #2fbf71' }}>
-                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #2fbf71' }} />
+        {/* Dynamic Screen-Space Pin Layer (Continuously tracks workers in RAF) */}
+        <div id="pin-layer" className={styles.pinLayer}>
+          {/* Pin 0: Plumber */}
+          <div id="pin-0" className={styles.pinAnchor}>
+            <div className={styles.pinbob}>
+              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={styles.pill}
+                  onClick={() => router.push('/book/plumber')}
+                  style={{
+                    pointerEvents: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minHeight: '44px',
+                    padding: '0 16px',
+                    border: 0,
+                    borderRadius: '999px',
+                    backgroundColor: t.card,
+                    color: t.text,
+                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                    letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 2.7s6 6.3 6 10.6a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7z" />
+                  </svg>
+                  <span>PLUMBER</span>
+                  <span style={{ fontWeight: 600, opacity: 0.65 }}>• 3 Nearby</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
+                </button>
+                <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
+                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #2fbf71' }}>
+                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #2fbf71' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pin 1: Maid */}
+          <div id="pin-1" className={styles.pinAnchor}>
+            <div className={styles.pinbobB}>
+              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={styles.pill}
+                  onClick={() => router.push('/book/cleaning')}
+                  style={{
+                    pointerEvents: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minHeight: '44px',
+                    padding: '0 16px',
+                    border: 0,
+                    borderRadius: '999px',
+                    backgroundColor: t.card,
+                    color: t.text,
+                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                    letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+                  </svg>
+                  <span>MAID</span>
+                  <span style={{ fontWeight: 600, opacity: 0.65 }}>• 4 Nearby</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
+                </button>
+                <div style={{ width: 2, height: 50, backgroundColor: t.text }} />
+                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
+                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pin 2: Electrician */}
+          <div id="pin-2" className={styles.pinAnchor}>
+            <div className={styles.pinbobC}>
+              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={styles.pill}
+                  onClick={() => router.push('/book/electrician')}
+                  style={{
+                    pointerEvents: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minHeight: '44px',
+                    padding: '0 18px',
+                    border: 0,
+                    borderRadius: '999px',
+                    backgroundColor: accent,
+                    color: '#1b1b1b',
+                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                    letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.25)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                  </svg>
+                  <span>ELECTRICIAN</span>
+                  <span style={{ fontWeight: 600 }}>• Available Now</span>
+                </button>
+                <div style={{ width: 2, height: 54, backgroundColor: t.text }} />
+                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${accent}` }}>
+                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${accent}` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pin 3: Mechanic */}
+          <div id="pin-3" className={styles.pinAnchor}>
+            <div className={styles.pinbob}>
+              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={styles.pill}
+                  onClick={() => router.push('/book/handyman')}
+                  style={{
+                    pointerEvents: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minHeight: '44px',
+                    padding: '0 16px',
+                    border: 0,
+                    borderRadius: '999px',
+                    backgroundColor: t.card,
+                    color: t.text,
+                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                    letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                  </svg>
+                  <span>MECHANIC</span>
+                  <span style={{ fontWeight: 600, opacity: 0.65 }}>• 2 Nearby</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
+                </button>
+                <div style={{ width: 2, height: 56, backgroundColor: t.text }} />
+                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #e5484d' }}>
+                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #e5484d' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pin 4: Carpenter */}
+          <div id="pin-4" className={styles.pinAnchor}>
+            <div className={styles.pinbobB}>
+              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className={styles.pill}
+                  onClick={() => router.push('/book/handyman')}
+                  style={{
+                    pointerEvents: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minHeight: '44px',
+                    padding: '0 16px',
+                    border: 0,
+                    borderRadius: '999px',
+                    backgroundColor: t.card,
+                    color: t.text,
+                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                    letterSpacing: '0.05em',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 20l6-6M14 4l6 6-3 3-6-6zM8 10l6 6" />
+                  </svg>
+                  <span>CARPENTER</span>
+                </button>
+                <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
+                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
+                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Floating Pin 2: Maid */}
-        <div style={{ position: 'absolute', left: '86%', top: '24%', width: 0, height: 0 }}>
-          <div className={styles.pinbobB}>
-            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button
-                type="button"
-                className={styles.pill}
-                onClick={() => router.push('/book/cleaning')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  minHeight: '44px',
-                  padding: '0 16px',
-                  border: 0,
-                  borderRadius: '999px',
-                  backgroundColor: t.card,
-                  color: t.text,
-                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                  letterSpacing: '0.05em',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
-                </svg>
-                <span>MAID</span>
-                <span style={{ fontWeight: 600, opacity: 0.65 }}>• 4 Nearby</span>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
-              </button>
-              <div style={{ width: 2, height: 50, backgroundColor: t.text }} />
-              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
-                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Floating Pin 3: Electrician */}
-        <div style={{ position: 'absolute', left: '72%', top: '37%', width: 0, height: 0 }}>
-          <div className={styles.pinbobC}>
-            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button
-                type="button"
-                className={styles.pill}
-                onClick={() => router.push('/book/electrician')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  minHeight: '44px',
-                  padding: '0 18px',
-                  border: 0,
-                  borderRadius: '999px',
-                  backgroundColor: accent,
-                  color: '#1b1b1b',
-                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                  letterSpacing: '0.05em',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.25)',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-                <span>ELECTRICIAN</span>
-                <span style={{ fontWeight: 600 }}>• Available Now</span>
-              </button>
-              <div style={{ width: 2, height: 54, backgroundColor: t.text }} />
-              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${accent}` }}>
-                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${accent}` }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Floating Pin 4: Mechanic */}
-        <div style={{ position: 'absolute', left: '13.5%', top: '75%', width: 0, height: 0 }}>
-          <div className={styles.pinbobB}>
-            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button
-                type="button"
-                className={styles.pill}
-                onClick={() => router.push('/book/handyman')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  minHeight: '44px',
-                  padding: '0 16px',
-                  border: 0,
-                  borderRadius: '999px',
-                  backgroundColor: t.card,
-                  color: t.text,
-                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                  letterSpacing: '0.05em',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                </svg>
-                <span>MECHANIC</span>
-                <span style={{ fontWeight: 600, opacity: 0.65 }}>• 2 Nearby</span>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
-              </button>
-              <div style={{ width: 2, height: 56, backgroundColor: t.text }} />
-              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #e5484d' }}>
-                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #e5484d' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Floating Pin 5: Carpenter */}
-        <div style={{ position: 'absolute', left: '92%', top: '66%', width: 0, height: 0 }}>
-          <div className={styles.pinbob}>
-            <div style={{ position: 'absolute', left: 0, top: 0, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button
-                type="button"
-                className={styles.pill}
-                onClick={() => router.push('/book/handyman')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  minHeight: '44px',
-                  padding: '0 16px',
-                  border: 0,
-                  borderRadius: '999px',
-                  backgroundColor: t.card,
-                  color: t.text,
-                  font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                  letterSpacing: '0.05em',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                  cursor: 'pointer',
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M3 20l6-6M14 4l6 6-3 3-6-6zM8 10l6 6" />
-                </svg>
-                <span>CARPENTER</span>
-              </button>
-              <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
-              <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
-                <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
-              </div>
-            </div>
-          </div>
+        {/* Camera View Controls (+ / - / Reset) matching Main.dc.html */}
+        <div className={styles.zoomControls}>
+          <button
+            type="button"
+            className={`${styles.pill} ${styles.zoomBtn}`}
+            onClick={() => zoomBy(1.35)}
+            aria-label="Zoom in"
+            style={{
+              border: `1px solid ${t.border}`,
+              backgroundColor: t.card,
+              color: t.text,
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`${styles.pill} ${styles.zoomBtn}`}
+            onClick={() => zoomBy(1 / 1.35)}
+            aria-label="Zoom out"
+            style={{
+              border: `1px solid ${t.border}`,
+              backgroundColor: t.card,
+              color: t.text,
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className={`${styles.pill} ${styles.zoomBtn}`}
+            onClick={zoomFit}
+            aria-label="Reset view"
+            style={{
+              border: `1px solid ${t.border}`,
+              backgroundColor: t.card,
+              color: t.text,
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            </svg>
+          </button>
         </div>
 
         {/* Centered Search Card Overlay */}
-        <div className={styles.searchOverlay}>
+        <div className={styles.searchOverlay} data-card="1">
           <div
             className={styles.liveBadge}
             style={{

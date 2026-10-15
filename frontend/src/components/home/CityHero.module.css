@@ -136,6 +136,10 @@
   min-height: 580px;
   overflow: hidden;
   background: #86c45a;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .citySvg {
@@ -147,7 +151,28 @@
   display: block;
 }
 
-/* Pins */
+/* Pins and pin layer */
+.pinLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.pinAnchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform: translate(-9999px, -9999px);
+  will-change: transform;
+}
+
 .pinbob {
   animation: pinbob 3.2s ease-in-out infinite;
 }
@@ -177,6 +202,35 @@
 }
 
 .pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 29, 63, 0.32);
+}
+
+/* Zoom Controls */
+.zoomControls {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zoomBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15, 29, 63, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.zoomBtn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(15, 29, 63, 0.32);
 }
@@ -295,5 +349,16 @@
   .bottomBar {
     padding: 10px 16px;
     justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pinbob,
+  .pinbobB,
+  .pinbobC,
+  .ring,
+  .livedot,
+  .nudge {
+    animation: none !important;
   }
 }
