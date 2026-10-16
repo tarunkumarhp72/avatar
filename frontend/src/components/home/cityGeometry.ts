@@ -314,7 +314,13 @@ export function getCityData(): CityData {
     { name: 'MAID', bi: 2, bj: -1, speed: 11, off: 0.4 },
     { name: 'ELECTRICIAN', bi: 2, bj: 0, speed: 13, off: 0.7 },
     { name: 'MECHANIC', bi: 1, bj: 4, speed: 11.5, off: 0.2 },
-    { name: 'CARPENTER', bi: 4, bj: 1, speed: 12.5, off: 0.55 }
+    { name: 'CARPENTER', bi: 4, bj: 1, speed: 12.5, off: 0.55 },
+    { name: 'CLEANER', bi: 1, bj: 1, speed: 11, off: 0.3 },
+    { name: 'HVAC', bi: 3, bj: 3, speed: 12, off: 0.8 },
+    { name: 'HANDYMAN', bi: 4, bj: 3, speed: 11.5, off: 0.1 },
+    { name: 'PAINTER', bi: 3, bj: 0, speed: 12.5, off: 0.6 },
+    { name: 'GARDENER', bi: 0, bj: 1, speed: 11, off: 0.45 },
+    { name: 'PEST CONTROL', bi: 1, bj: 3, speed: 12, off: 0.25 }
   ];
 
   const pinBlocks: Record<string, number> = {};
@@ -435,7 +441,13 @@ export function getCityData(): CityData {
     { shirt: '#2b2f3a', pants: '#2b2f3a', hat: '#ffffff', brim: 'none', bag: 'none', vest: 'none', apron: '#f4f4f0', ring: '#ffffff' },
     { shirt: '#3d6fb5', pants: '#2c3350', hat: '#f2c230', brim: '#f2c230', bag: 'none', vest: '#d6f03a', apron: 'none', ring: '#fbb43c' },
     { shirt: '#4a5568', pants: '#2c3350', hat: '#d9483b', brim: '#d9483b', bag: '#222a3a', vest: 'none', apron: 'none', ring: '#e5484d' },
-    { shirt: '#b07a3a', pants: '#5b4a3a', hat: '#5a3a22', brim: 'none', bag: 'none', vest: 'none', apron: '#c9a56a', ring: '#ffffff' }
+    { shirt: '#b07a3a', pants: '#5b4a3a', hat: '#5a3a22', brim: 'none', bag: 'none', vest: 'none', apron: '#c9a56a', ring: '#ffffff' },
+    { shirt: '#c0498a', pants: '#2c3350', hat: '#f4f4f0', brim: 'none', bag: '#8a5bc4', vest: 'none', apron: '#f4f4f0', ring: '#c0498a' },
+    { shirt: '#2f9e9e', pants: '#2c3350', hat: '#2f9e9e', brim: '#2f9e9e', bag: '#222a3a', vest: 'none', apron: 'none', ring: '#2f9e9e' },
+    { shirt: '#6a5acd', pants: '#3a3a4a', hat: '#f2c230', brim: '#f2c230', bag: 'none', vest: '#d6f03a', apron: 'none', ring: '#6a5acd' },
+    { shirt: '#e8e4da', pants: '#4a5568', hat: '#e8e4da', brim: 'none', bag: 'none', vest: 'none', apron: 'none', ring: '#e8a020' },
+    { shirt: '#3f8f4a', pants: '#5b4a3a', hat: '#c9a56a', brim: '#c9a56a', bag: 'none', vest: 'none', apron: '#2f6f3a', ring: '#3f8f4a' },
+    { shirt: '#4a5568', pants: '#222a3a', hat: '#222a3a', brim: 'none', bag: '#d9483b', vest: '#d6f03a', apron: 'none', ring: '#e5484d' }
   ];
 
   const pinWalkers: PinWalker[] = [];

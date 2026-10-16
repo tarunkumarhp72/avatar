@@ -6,6 +6,183 @@ import { useRouter } from 'next/navigation';
 import { getCityData } from './cityGeometry';
 import styles from './CityHero.module.css';
 
+interface PinConfig {
+  id: number;
+  name: string;
+  nearby: string;
+  hasDot: boolean;
+  dotColor?: string;
+  ringColor: string;
+  stemHeight: number;
+  bobClassKey: 'pinbob' | 'pinbobB' | 'pinbobC';
+  slug: string;
+  iconPath: React.ReactNode;
+}
+
+const PIN_ITEMS: PinConfig[] = [
+  {
+    id: 0,
+    name: 'PLUMBER',
+    nearby: '• 3 Nearby',
+    hasDot: true,
+    dotColor: '#2fbf71',
+    ringColor: '#2fbf71',
+    stemHeight: 52,
+    bobClassKey: 'pinbob',
+    slug: 'plumber',
+    iconPath: <path d="M12 2.7s6 6.3 6 10.6a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7z" />,
+  },
+  {
+    id: 1,
+    name: 'MAID',
+    nearby: '• 4 Nearby',
+    hasDot: true,
+    dotColor: '#2fbf71',
+    ringColor: 'currentColor',
+    stemHeight: 50,
+    bobClassKey: 'pinbobB',
+    slug: 'cleaning',
+    iconPath: <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />,
+  },
+  {
+    id: 2,
+    name: 'ELECTRICIAN',
+    nearby: '• Available Now',
+    hasDot: false,
+    ringColor: '#E59A1F',
+    stemHeight: 54,
+    bobClassKey: 'pinbobC',
+    slug: 'electrician',
+    iconPath: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
+  },
+  {
+    id: 3,
+    name: 'MECHANIC',
+    nearby: '• 2 Nearby',
+    hasDot: true,
+    dotColor: '#2fbf71',
+    ringColor: '#e5484d',
+    stemHeight: 56,
+    bobClassKey: 'pinbob',
+    slug: 'mechanic',
+    iconPath: (
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    ),
+  },
+  {
+    id: 4,
+    name: 'CARPENTER',
+    nearby: '',
+    hasDot: false,
+    ringColor: 'currentColor',
+    stemHeight: 52,
+    bobClassKey: 'pinbobB',
+    slug: 'carpenter',
+    iconPath: <path d="M3 20l6-6M14 4l6 6-3 3-6-6zM8 10l6 6" />,
+  },
+  {
+    id: 5,
+    name: 'CLEANER',
+    nearby: '• 5 Nearby',
+    hasDot: true,
+    dotColor: '#2fbf71',
+    ringColor: '#2fbf71',
+    stemHeight: 50,
+    bobClassKey: 'pinbob',
+    slug: 'cleaning',
+    iconPath: (
+      <>
+        <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" />
+        <path d="M19 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" />
+      </>
+    ),
+  },
+  {
+    id: 6,
+    name: 'HVAC',
+    nearby: '• Available Now',
+    hasDot: false,
+    ringColor: '#E59A1F',
+    stemHeight: 52,
+    bobClassKey: 'pinbobB',
+    slug: 'hvac',
+    iconPath: (
+      <>
+        <path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    ),
+  },
+  {
+    id: 7,
+    name: 'HANDYMAN',
+    nearby: '• 3 Nearby',
+    hasDot: true,
+    dotColor: '#2fbf71',
+    ringColor: '#2fbf71',
+    stemHeight: 54,
+    bobClassKey: 'pinbobC',
+    slug: 'handyman',
+    iconPath: (
+      <>
+        <path d="M14 4l6 6-3 3-6-6zM3 21l8-8" />
+        <path d="M11 7l-4 4" />
+      </>
+    ),
+  },
+  {
+    id: 8,
+    name: 'PAINTER',
+    nearby: '• 2 Nearby',
+    hasDot: true,
+    dotColor: '#2fbf71',
+    ringColor: 'currentColor',
+    stemHeight: 56,
+    bobClassKey: 'pinbob',
+    slug: 'handyman',
+    iconPath: (
+      <>
+        <rect x="3" y="3" width="14" height="6" rx="1.5" />
+        <path d="M17 6h3v5h-9v3" />
+        <rect x="9" y="14" width="4" height="7" rx="1" />
+      </>
+    ),
+  },
+  {
+    id: 9,
+    name: 'GARDENER',
+    nearby: '• 4 Nearby',
+    hasDot: true,
+    dotColor: '#2fbf71',
+    ringColor: '#2fbf71',
+    stemHeight: 50,
+    bobClassKey: 'pinbobB',
+    slug: 'handyman',
+    iconPath: (
+      <>
+        <path d="M11 20A7 7 0 0 1 4 13c0-5 5-9 16-9 0 11-4 16-9 16z" />
+        <path d="M4 21c3-6 6-9 10-11" />
+      </>
+    ),
+  },
+  {
+    id: 10,
+    name: 'PEST CONTROL',
+    nearby: '• Available Now',
+    hasDot: false,
+    ringColor: '#e5484d',
+    stemHeight: 52,
+    bobClassKey: 'pinbobC',
+    slug: 'cleaning',
+    iconPath: (
+      <>
+        <path d="M12 8a4 4 0 0 1 4 4v3a4 4 0 0 1-8 0v-3a4 4 0 0 1 4-4z" />
+        <path d="M8 12H4M16 12h4M8 16H3M16 16h5M10 8l-2-3M14 8l2-3" />
+      </>
+    ),
+  },
+];
+
 export default function CityHero() {
   const router = useRouter();
   const [mode, setMode] = useState<'day' | 'night'>('day');
@@ -748,207 +925,114 @@ export default function CityHero() {
 
         {/* Dynamic Screen-Space Pin Layer (Continuously tracks workers in RAF) */}
         <div id="pin-layer" className={styles.pinLayer}>
-          {/* Pin 0: Plumber */}
-          <div id="pin-0" className={styles.pinAnchor}>
-            <div className={styles.pinbob}>
-              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className={styles.pill}
-                  onClick={() => router.push('/book/plumber')}
-                  style={{
-                    pointerEvents: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    minHeight: '44px',
-                    padding: '0 16px',
-                    border: 0,
-                    borderRadius: '999px',
-                    backgroundColor: t.card,
-                    color: t.text,
-                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                    letterSpacing: '0.05em',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 2.7s6 6.3 6 10.6a6 6 0 0 1-12 0C6 9 12 2.7 12 2.7z" />
-                  </svg>
-                  <span>PLUMBER</span>
-                  <span style={{ fontWeight: 600, opacity: 0.65 }}>• 3 Nearby</span>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
-                </button>
-                <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
-                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #2fbf71' }}>
-                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #2fbf71' }} />
-                </div>
-              </div>
-            </div>
-          </div>
+          {PIN_ITEMS.map((p) => {
+            const bobClass =
+              p.bobClassKey === 'pinbobB'
+                ? styles.pinbobB
+                : p.bobClassKey === 'pinbobC'
+                ? styles.pinbobC
+                : styles.pinbob;
+            const ringColor = p.ringColor === 'currentColor' ? t.text : p.ringColor;
+            const isElectrician = p.name === 'ELECTRICIAN';
 
-          {/* Pin 1: Maid */}
-          <div id="pin-1" className={styles.pinAnchor}>
-            <div className={styles.pinbobB}>
-              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className={styles.pill}
-                  onClick={() => router.push('/book/cleaning')}
-                  style={{
-                    pointerEvents: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    minHeight: '44px',
-                    padding: '0 16px',
-                    border: 0,
-                    borderRadius: '999px',
-                    backgroundColor: t.card,
-                    color: t.text,
-                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                    letterSpacing: '0.05em',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
-                  </svg>
-                  <span>MAID</span>
-                  <span style={{ fontWeight: 600, opacity: 0.65 }}>• 4 Nearby</span>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
-                </button>
-                <div style={{ width: 2, height: 50, backgroundColor: t.text }} />
-                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
-                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
+            return (
+              <div id={`pin-${p.id}`} className={styles.pinAnchor} key={`pin-${p.id}`}>
+                <div className={bobClass}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      bottom: -7,
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className={`${styles.pill} ${styles.pp}`}
+                      onClick={() => router.push(`/book/${p.slug}`)}
+                      style={{
+                        pointerEvents: 'auto',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        minHeight: '44px',
+                        padding: '0 16px',
+                        border: 0,
+                        borderRadius: '999px',
+                        backgroundColor: isElectrician ? accent : t.card,
+                        color: isElectrician ? '#1b1b1b' : t.text,
+                        font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
+                        letterSpacing: '0.05em',
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke={isElectrician ? '#1b1b1b' : t.text}
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        {p.iconPath}
+                      </svg>
+                      <span>{p.name}</span>
+                      {p.nearby && (
+                        <span className={styles.pn} style={{ fontWeight: 600, opacity: isElectrician ? 1 : 0.65 }}>
+                          {p.nearby}
+                        </span>
+                      )}
+                      {p.hasDot && (
+                        <span
+                          className={styles.pn}
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: p.dotColor || '#2fbf71',
+                          }}
+                        />
+                      )}
+                    </button>
+                    <div style={{ width: 2, height: p.stemHeight, backgroundColor: t.text }} />
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: 14,
+                        height: 14,
+                        boxSizing: 'border-box',
+                        borderRadius: '50%',
+                        backgroundColor: t.card,
+                        border: `3px solid ${ringColor}`,
+                      }}
+                    >
+                      <span
+                        className={styles.ring}
+                        style={{
+                          position: 'absolute',
+                          left: -8,
+                          top: -8,
+                          width: 22,
+                          height: 22,
+                          boxSizing: 'border-box',
+                          borderRadius: '50%',
+                          border: `2px solid ${ringColor}`,
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Pin 2: Electrician */}
-          <div id="pin-2" className={styles.pinAnchor}>
-            <div className={styles.pinbobC}>
-              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className={styles.pill}
-                  onClick={() => router.push('/book/electrician')}
-                  style={{
-                    pointerEvents: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    minHeight: '44px',
-                    padding: '0 18px',
-                    border: 0,
-                    borderRadius: '999px',
-                    backgroundColor: accent,
-                    color: '#1b1b1b',
-                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                    letterSpacing: '0.05em',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.25)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1b1b1b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                  </svg>
-                  <span>ELECTRICIAN</span>
-                  <span style={{ fontWeight: 600 }}>• Available Now</span>
-                </button>
-                <div style={{ width: 2, height: 54, backgroundColor: t.text }} />
-                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${accent}` }}>
-                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${accent}` }} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pin 3: Mechanic */}
-          <div id="pin-3" className={styles.pinAnchor}>
-            <div className={styles.pinbob}>
-              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className={styles.pill}
-                  onClick={() => router.push('/book/handyman')}
-                  style={{
-                    pointerEvents: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    minHeight: '44px',
-                    padding: '0 16px',
-                    border: 0,
-                    borderRadius: '999px',
-                    backgroundColor: t.card,
-                    color: t.text,
-                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                    letterSpacing: '0.05em',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                  </svg>
-                  <span>MECHANIC</span>
-                  <span style={{ fontWeight: 600, opacity: 0.65 }}>• 2 Nearby</span>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#2fbf71' }} />
-                </button>
-                <div style={{ width: 2, height: 56, backgroundColor: t.text }} />
-                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: '3px solid #e5484d' }}>
-                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: '2px solid #e5484d' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pin 4: Carpenter */}
-          <div id="pin-4" className={styles.pinAnchor}>
-            <div className={styles.pinbobB}>
-              <div style={{ position: 'absolute', left: 0, bottom: -7, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className={styles.pill}
-                  onClick={() => router.push('/book/handyman')}
-                  style={{
-                    pointerEvents: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    minHeight: '44px',
-                    padding: '0 16px',
-                    border: 0,
-                    borderRadius: '999px',
-                    backgroundColor: t.card,
-                    color: t.text,
-                    font: "800 12px 'Plus Jakarta Sans', system-ui, sans-serif",
-                    letterSpacing: '0.05em',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 14px rgba(15, 29, 63, 0.22)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.text} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 20l6-6M14 4l6 6-3 3-6-6zM8 10l6 6" />
-                  </svg>
-                  <span>CARPENTER</span>
-                </button>
-                <div style={{ width: 2, height: 52, backgroundColor: t.text }} />
-                <div style={{ position: 'relative', width: 14, height: 14, boxSizing: 'border-box', borderRadius: '50%', backgroundColor: t.card, border: `3px solid ${t.text}` }}>
-                  <span className={styles.ring} style={{ position: 'absolute', left: -8, top: -8, width: 22, height: 22, boxSizing: 'border-box', borderRadius: '50%', border: `2px solid ${t.text}` }} />
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         {/* Camera View Controls (+ / - / Reset) matching Main.dc.html */}
@@ -1047,9 +1131,12 @@ export default function CityHero() {
                   }}
                 >
                   <option value="cleaning">House Cleaning</option>
-                  <option value="plumber">Plumbing</option>
-                  <option value="electrician">Electrical</option>
-                  <option value="handyman">Carpentry & Handyman</option>
+                  <option value="cleaning">Maid</option>
+                  <option value="plumber">Plumber</option>
+                  <option value="electrician">Electrician</option>
+                  <option value="mechanic">Mechanic</option>
+                  <option value="carpenter">Carpenter</option>
+                  <option value="handyman">Handyman</option>
                   <option value="hvac">HVAC Repair</option>
                 </select>
 
