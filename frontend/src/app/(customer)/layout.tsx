@@ -12,9 +12,14 @@ export default function CustomerLayout({
 }) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
+  const isBookingPage = pathname?.startsWith('/book');
 
   if (isHomePage) {
     return <main style={{ width: '100vw', height: '100vh', overflow: 'hidden', margin: 0, padding: 0 }}>{children}</main>;
+  }
+
+  if (isBookingPage) {
+    return <main style={{ minHeight: '100vh', backgroundColor: '#f6f4ee' }}>{children}</main>;
   }
 
   return (
@@ -27,4 +32,3 @@ export default function CustomerLayout({
     </div>
   );
 }
-
