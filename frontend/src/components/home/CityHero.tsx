@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCityData } from './cityGeometry';
+import { getCategories } from '@/lib/api/categories';
 import styles from './CityHero.module.css';
 
 interface PinConfig {
@@ -183,11 +184,35 @@ const PIN_ITEMS: PinConfig[] = [
   },
 ];
 
+const DEFAULT_CATEGORIES = [
+  { slug: 'cleaning', name: 'House Cleaning' },
+  { slug: 'maid', name: 'Maid' },
+  { slug: 'plumber', name: 'Plumber' },
+  { slug: 'electrician', name: 'Electrician' },
+  { slug: 'mechanic', name: 'Mechanic' },
+  { slug: 'carpenter', name: 'Carpenter' },
+  { slug: 'handyman', name: 'Handyman' },
+  { slug: 'hvac', name: 'HVAC Repair' },
+];
+
 export default function CityHero() {
   const router = useRouter();
   const [mode, setMode] = useState<'day' | 'night'>('day');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('plumber');
+  const [categoryList, setCategoryList] = useState(DEFAULT_CATEGORIES);
+
+  useEffect(() => {
+    getCategories()
+      .then((cats) => {
+        if (Array.isArray(cats) && cats.length > 0) {
+          setCategoryList(cats.map((c) => ({ slug: c.slug, name: c.name })));
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load categories from backend, using defaults:', err);
+      });
+  }, []);
 
   const city = useMemo(() => getCityData(), []);
 
@@ -1149,14 +1174,11 @@ export default function CityHero() {
                       color: t.text,
                     }}
                   >
-                    <option value="cleaning">House Cleaning</option>
-                    <option value="cleaning">Maid</option>
-                    <option value="plumber">Plumber</option>
-                    <option value="electrician">Electrician</option>
-                    <option value="mechanic">Mechanic</option>
-                    <option value="carpenter">Carpenter</option>
-                    <option value="handyman">Handyman</option>
-                    <option value="hvac">HVAC Repair</option>
+                    {categoryList.map((cat) => (
+                      <option key={cat.slug} value={cat.slug}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
 
                   <button type="submit" className={styles.searchSubmitBtn}>

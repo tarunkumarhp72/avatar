@@ -3,7 +3,7 @@
  */
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const isServer = typeof window === 'undefined';
-  const baseUrl = isServer ? (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/v1') : '/api/v1';
+  const baseUrl = isServer ? (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api/v1') : '/api/v1';
   // If it's the server and we use NEXT_PUBLIC_API_URL, we don't need the `/api/v1` prefix if it's already there, 
   // but let's assume endpoint starts with `/` and we just append it.
   const url = isServer ? `${baseUrl.replace(/\/api\/v1$/, '')}/api/v1${endpoint}` : `/api/v1${endpoint}`;

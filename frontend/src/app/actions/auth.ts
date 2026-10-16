@@ -8,7 +8,7 @@ export async function loginWithOtp(data: VerifyOtpRequest) {
   try {
     // We cannot use fetchApi proxy from a server action since proxy is for browser.
     // So we must fetch the backend directly from the server.
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/v1';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api/v1';
     const response = await fetch(`${apiUrl}/auth/otp/verify`, {
       method: 'POST',
       headers: {

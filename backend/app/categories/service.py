@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 import redis.asyncio as redis
 from fastapi import status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.categories.models import ServiceCategory
@@ -32,6 +32,9 @@ async def get_all_categories(db: AsyncSession, redis_client: redis.Redis) -> Seq
             "name": c.name,
             "slug": c.slug,
             "description": c.description,
+            "noun": c.noun,
+            "base_price": c.base_price,
+            "items": c.items or [],
             "parent_id": str(c.parent_id) if c.parent_id else None,
             "pricing_model": c.pricing_model,
             "is_active": c.is_active,
@@ -44,15 +47,33 @@ async def get_all_categories(db: AsyncSession, redis_client: redis.Redis) -> Seq
     return categories
 
 
-async def get_category(category_id: uuid.UUID, db: AsyncSession, redis_client: redis.Redis) -> ServiceCategory:
-    # Individual category can be cached for 5 mins
-    cache_key = f"cache:category:{category_id}"
+async def get_all_categories_admin(db: AsyncSession) -> Sequence[ServiceCategory]:
+    stmt = select(ServiceCategory).order_by(ServiceCategory.sort_order, ServiceCategory.name)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+async def get_category(id_or_slug: str | uuid.UUID, db: AsyncSession, redis_client: redis.Redis) -> ServiceCategory:
+    cache_key = f"cache:category:{id_or_slug}"
     cached = await redis_client.get(cache_key)
     if cached:
         data = json.loads(cached)
         return ServiceCategory(**data)
 
-    stmt = select(ServiceCategory).where(ServiceCategory.id == category_id, ServiceCategory.is_active == True)
+    parsed_uuid = None
+    if isinstance(id_or_slug, uuid.UUID):
+        parsed_uuid = id_or_slug
+    else:
+        try:
+            parsed_uuid = uuid.UUID(str(id_or_slug))
+        except ValueError:
+            parsed_uuid = None
+
+    if parsed_uuid:
+        stmt = select(ServiceCategory).where(ServiceCategory.id == parsed_uuid, ServiceCategory.is_active == True)
+    else:
+        stmt = select(ServiceCategory).where(ServiceCategory.slug == id_or_slug, ServiceCategory.is_active == True)
+
     result = await db.execute(stmt)
     category = result.scalar_one_or_none()
     if not category:
@@ -63,6 +84,9 @@ async def get_category(category_id: uuid.UUID, db: AsyncSession, redis_client: r
         "name": category.name,
         "slug": category.slug,
         "description": category.description,
+        "noun": category.noun,
+        "base_price": category.base_price,
+        "items": category.items or [],
         "parent_id": str(category.parent_id) if category.parent_id else None,
         "pricing_model": category.pricing_model,
         "is_active": category.is_active,
@@ -74,7 +98,10 @@ async def get_category(category_id: uuid.UUID, db: AsyncSession, redis_client: r
 
 
 async def create_category(data: ServiceCategoryCreate, db: AsyncSession, redis_client: redis.Redis) -> ServiceCategory:
-    category = ServiceCategory(**data.model_dump())
+    dump = data.model_dump()
+    if "items" in dump and dump["items"]:
+        dump["items"] = [item if isinstance(item, dict) else item.model_dump() for item in dump["items"]]
+    category = ServiceCategory(**dump)
     db.add(category)
     try:
         await db.commit()
@@ -96,6 +123,9 @@ async def update_category(category_id: uuid.UUID, data: ServiceCategoryUpdate, d
         raise AppError(code="NOT_FOUND", message="Category not found", status_code=status.HTTP_404_NOT_FOUND)
 
     update_data = data.model_dump(exclude_unset=True)
+    if "items" in update_data and update_data["items"] is not None:
+        update_data["items"] = [item if isinstance(item, dict) else item.model_dump() for item in update_data["items"]]
+
     for k, v in update_data.items():
         setattr(category, k, v)
 
@@ -109,6 +139,7 @@ async def update_category(category_id: uuid.UUID, data: ServiceCategoryUpdate, d
     # Invalidate caches
     await redis_client.delete(CACHE_KEY)
     await redis_client.delete(f"cache:category:{category_id}")
+    await redis_client.delete(f"cache:category:{category.slug}")
     return category
 
 
@@ -125,3 +156,5 @@ async def delete_category(category_id: uuid.UUID, db: AsyncSession, redis_client
     # Invalidate caches
     await redis_client.delete(CACHE_KEY)
     await redis_client.delete(f"cache:category:{category_id}")
+    await redis_client.delete(f"cache:category:{category.slug}")
+

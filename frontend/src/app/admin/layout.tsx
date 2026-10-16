@@ -22,6 +22,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/workers" style={{ padding: '0.75rem 1rem', color: '#fff', textDecoration: 'none', borderRadius: '8px' }}>
             Workers & KYC
           </Link>
+          <Link href="/admin/categories" style={{ padding: '0.75rem 1rem', color: '#fff', textDecoration: 'none', borderRadius: '8px' }}>
+            Categories & Services
+          </Link>
           <Link href="/admin/bookings" style={{ padding: '0.75rem 1rem', color: '#fff', textDecoration: 'none', borderRadius: '8px' }}>
             All Bookings
           </Link>

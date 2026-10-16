@@ -1,7 +1,8 @@
+from typing import Any
 import enum
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base, TimestampMixin, UUIDPrimaryKey
@@ -19,8 +20,11 @@ class ServiceCategory(Base, UUIDPrimaryKey, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(String(1000))
+    noun: Mapped[str | None] = mapped_column(String(255), default="professional")
+    base_price: Mapped[int] = mapped_column(Integer, default=499, nullable=False)
+    items: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
     parent_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("service_categories.id", ondelete="RESTRICT"), index=True)
-    pricing_model: Mapped[PricingModel] = mapped_column(String, nullable=False)
+    pricing_model: Mapped[PricingModel] = mapped_column(String, default=PricingModel.FIXED, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     icon_url: Mapped[str | None] = mapped_column(String(1000))
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createBooking } from '@/lib/api/bookings';
 import { getMyAddresses, createAddress } from '@/lib/api/addresses';
+import { getCategories } from '@/lib/api/categories';
 import styles from './BookingFlow.module.css';
 
 interface CategoryConfig {
@@ -121,6 +122,20 @@ const CATS: CategoryConfig[] = [
       { id: 'k5', name: 'Broken door or lock', desc: 'Urgent re-secure of your home', time: 'under 30 min', add: 0, em: true },
     ],
   },
+  {
+    id: 'maid',
+    name: 'Maid',
+    noun: 'house maid',
+    base: 499,
+    issues: [
+      { id: 'm_0', name: 'Daily housekeeping & dusting', desc: 'Sweeping, mopping, tidying rooms', time: '1–2 hrs', add: 0 },
+      { id: 'm_1', name: 'Kitchen utensil cleaning', desc: 'Dishwashing, counter wipe, sink clean', time: '45 min', add: 50 },
+      { id: 'm_2', name: 'Clothes washing & folding', desc: 'Machine wash, hand wash and fold', time: '60 min', add: 100 },
+      { id: 'm_3', name: 'Full house helper (day)', desc: 'Complete day household chores', time: '4 hrs', add: 400 },
+      { id: 'm_4', name: 'Post-party quick cleanup', desc: 'Trash clearance and floor scrubbing', time: '90 min', add: 200 },
+      { id: 'm_5', name: 'Emergency same-day helper', desc: 'Immediate maid assistance', time: 'under 45 min', add: 0, em: true },
+    ],
+  },
 ];
 
 const NAMES = [
@@ -145,15 +160,51 @@ interface BookingFlowProps {
 export default function BookingFlow({ categorySlug = 'plumber' }: BookingFlowProps) {
   const router = useRouter();
 
-  // Find initial category matching slug
-  const matchedCat = CATS.find((c) => c.id === categorySlug) || CATS[1];
-  const [catId, setCatId] = useState<string>(matchedCat.id);
+  const [catsList, setCatsList] = useState<CategoryConfig[]>(CATS);
+  const matchedCat = catsList.find((c) => c.id === categorySlug) || catsList[0] || CATS[0];
+  const [catId, setCatId] = useState<string>(categorySlug);
   const [step, setStep] = useState<number>(1);
   const [issueId, setIssueId] = useState<string>('');
   const [urgent, setUrgent] = useState<boolean>(false);
   const [note, setNote] = useState<string>('');
   const [showNote, setShowNote] = useState<boolean>(false);
   const [showCats, setShowCats] = useState<boolean>(false);
+
+  useEffect(() => {
+    getCategories()
+      .then((dbCats) => {
+        if (Array.isArray(dbCats) && dbCats.length > 0) {
+          const transformed: CategoryConfig[] = dbCats.map((c) => ({
+            id: c.slug,
+            name: c.name,
+            noun: c.noun || c.name.toLowerCase(),
+            base: c.base_price || 499,
+            issues: (c.items && c.items.length > 0)
+              ? c.items.map((it, idx) => ({
+                  id: it.id || `it_${idx}`,
+                  name: it.name,
+                  desc: it.desc || '',
+                  time: it.time || '60 min',
+                  add: Number(it.add || 0),
+                  em: Boolean(it.em),
+                }))
+              : [
+                  { id: 'def_0', name: `Standard ${c.name} service`, desc: c.description || 'Professional service', time: '60 min', add: 0 },
+                ],
+          }));
+          setCatsList(transformed);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load categories from backend, using default CATS:', err);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (categorySlug) {
+      setCatId(categorySlug);
+    }
+  }, [categorySlug]);
 
   // Address and Time
   const [addr, setAddr] = useState<string>('');
@@ -175,8 +226,8 @@ export default function BookingFlow({ categorySlug = 'plumber' }: BookingFlowPro
   const [nowTs, setNowTs] = useState<number>(Date.now());
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const catIdx = Math.max(0, CATS.findIndex((c) => c.id === catId));
-  const currentCat = CATS[catIdx] || CATS[0];
+  const catIdx = Math.max(0, catsList.findIndex((c) => c.id === catId));
+  const currentCat = catsList[catIdx] || catsList[0] || CATS[0];
 
   const rupee = (n: number) => '₹' + n.toLocaleString('en-IN');
 
@@ -747,7 +798,7 @@ export default function BookingFlow({ categorySlug = 'plumber' }: BookingFlowPro
                   {/* Category switcher chips */}
                   {showCats && (
                     <div role="group" aria-label="Choose a service" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {CATS.map((c) => (
+                      {catsList.map((c) => (
                         <button
                           key={c.id}
                           type="button"
