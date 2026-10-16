@@ -21,6 +21,7 @@
 .cityHeroRoot {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -239,78 +240,101 @@
 .searchOverlay {
   position: absolute;
   left: 50%;
-  top: 32px;
+  top: 28px;
   transform: translateX(-50%);
   width: calc(100% - 32px);
   max-width: 560px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   z-index: 5;
 }
 
 .liveBadge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 5px 14px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
+  white-space: nowrap;
   box-shadow: 0 2px 10px rgba(15, 29, 63, 0.15);
 }
 
 .searchBoxCard {
   width: 100%;
   box-sizing: border-box;
-  padding: 12px 12px 10px;
-  border-radius: 18px;
+  padding: 10px 12px 8px;
+  border-radius: 16px;
   box-shadow: 0 12px 36px rgba(15, 29, 63, 0.28);
 }
 
 .searchInputsRow {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
   align-items: center;
   gap: 8px;
   border-radius: 12px;
-  padding: 6px;
+  padding: 5px;
+}
+
+.searchInputWrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+}
+
+.searchIcon {
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .searchInput {
-  flex: 1 1 200px;
+  flex: 1;
   min-width: 0;
-  min-height: 44px;
+  min-height: 42px;
   box-sizing: border-box;
   border: 0;
-  padding: 0 10px;
+  padding: 0 6px;
   background: transparent;
   font: 500 14px 'Plus Jakarta Sans', system-ui, sans-serif;
   outline: none;
 }
 
+.searchSelectAndBtnRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .categorySelect {
-  flex: 0 1 150px;
-  min-height: 44px;
+  width: 140px;
+  min-height: 42px;
   border: 0;
   padding: 0 8px;
   background: transparent;
-  font: 600 14px 'Plus Jakarta Sans', system-ui, sans-serif;
+  font: 600 13.5px 'Plus Jakarta Sans', system-ui, sans-serif;
   outline: none;
   cursor: pointer;
 }
 
 .searchSubmitBtn {
-  min-height: 44px;
-  padding: 0 22px;
+  min-height: 42px;
+  padding: 0 20px;
   border: 0;
   border-radius: 8px;
   background-color: #E59A1F;
   color: #1b1b1b;
-  font: 800 15px 'Plus Jakarta Sans', system-ui, sans-serif;
+  font: 800 14.5px 'Plus Jakarta Sans', system-ui, sans-serif;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 0.15s ease, filter 0.2s ease;
 }
 
@@ -320,23 +344,62 @@
 }
 
 .searchSubtitle {
-  padding-top: 10px;
+  padding-top: 8px;
   text-align: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 /* Footer / Trust Bar */
 .bottomBar {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 24px;
-  min-height: 64px;
+  padding: 10px 24px;
+  min-height: 56px;
   box-sizing: border-box;
   z-index: 20;
+}
+
+.bottomBarIcons {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.bottomBarScroll {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.bottomBarStats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
+}
+
+.bottomBarStatItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bottomBarStatTitle {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.bottomBarStatSub {
+  font-size: 11.5px;
+  font-weight: 500;
 }
 
 .pp {
@@ -352,64 +415,184 @@
   align-items: center;
 }
 
+/* Mobile Responsiveness (Tablets & Phones <= 640px) */
 @media (max-width: 640px) {
   .header {
-    padding: 10px 16px;
-    gap: 8px 12px;
-    min-height: 0;
+    padding: 8px 14px;
+    min-height: 48px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .brandLogo {
+    font-size: 20px;
   }
   .navLinks {
-    order: 3;
-    width: 100%;
-    gap: 20px;
-    font-size: 14px;
+    display: none;
   }
   .headerActions {
     flex-wrap: nowrap;
     gap: 8px;
   }
+  .themeToggleBtn {
+    width: 34px;
+    height: 34px;
+  }
+  .themeToggleBtn svg {
+    width: 16px;
+    height: 16px;
+  }
   .providerBtn {
     display: none;
+  }
+  .bookNowBtn {
+    min-height: 34px;
+    height: 34px;
+    padding: 0 13px;
+    font-size: 12.5px;
+    border-radius: 6px;
+  }
+  .stageSection {
+    min-height: 0;
+  }
+  .searchOverlay {
+    top: 8px;
+    width: calc(100% - 20px);
+    max-width: 360px;
+    gap: 6px;
+  }
+  .liveBadge {
+    padding: 3px 10px;
+    font-size: 10px;
+    gap: 6px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .liveBadge .livedot {
+    width: 6px !important;
+    height: 6px !important;
+    flex-shrink: 0;
+  }
+  .searchBoxCard {
+    padding: 6px 8px;
+    border-radius: 12px;
+    box-shadow: 0 8px 22px rgba(15, 29, 63, 0.2);
   }
   .searchInputsRow {
     flex-direction: column;
     align-items: stretch;
-    gap: 0;
+    gap: 5px;
     padding: 4px;
+    border-radius: 8px;
+  }
+  .searchInputWrap {
+    flex: none;
+    width: 100%;
+    height: 33px;
+    min-height: 33px;
+    padding-left: 7px;
+    box-sizing: border-box;
+    border-radius: 6px;
+    background: rgba(128, 128, 128, 0.08);
+  }
+  .searchIcon {
+    width: 13px;
+    height: 13px;
   }
   .searchInput {
-    flex: none;
+    height: 33px;
+    min-height: 33px;
+    font-size: 12px;
+    padding: 0 5px;
+  }
+  .searchSelectAndBtnRow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
     width: 100%;
-    padding: 0 12px;
-    font-size: 15px;
   }
   .categorySelect {
-    flex: none;
-    width: 100%;
-    border-left: 0 !important;
-    border-top: 1px solid rgba(128, 128, 128, 0.28);
-    padding: 0 8px;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    height: 33px;
+    min-height: 33px;
+    font-size: 11.5px;
+    padding: 0 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(128, 128, 128, 0.28) !important;
+    background: rgba(128, 128, 128, 0.08);
   }
   .searchSubmitBtn {
-    width: 100%;
-    margin-top: 6px;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 74px;
+    height: 33px;
+    min-height: 33px;
+    margin-top: 0;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 6px;
+  }
+  .searchSubtitle {
+    display: none;
+  }
+  .zoomControls {
+    right: 10px;
+    bottom: 10px;
+    gap: 6px;
+  }
+  .zoomBtn {
+    width: 34px;
+    height: 34px;
+  }
+  .zoomBtn svg {
+    width: 16px;
+    height: 16px;
   }
   .bottomBar {
-    padding: 10px 16px;
-    justify-content: center;
+    padding: 6px 12px;
+    min-height: 42px;
+    gap: 8px;
+  }
+  .bottomBarScroll {
+    display: none;
+  }
+  .bottomBarIcons {
+    gap: 12px;
+  }
+  .bottomBarIcons svg {
+    width: 17px;
+    height: 17px;
+  }
+  .bottomBarStats {
+    gap: 12px;
+  }
+  .bottomBarStatTitle {
+    font-size: 11.5px;
+  }
+  .bottomBarStatSub {
+    font-size: 9.5px;
   }
   .pp {
-    min-height: 28px !important;
-    padding: 0 10px !important;
-    font-size: 10px !important;
-    gap: 5px !important;
+    min-height: 24px !important;
+    padding: 0 8px !important;
+    font-size: 9px !important;
+    gap: 4px !important;
   }
   .pp svg {
-    width: 12px !important;
-    height: 12px !important;
+    width: 10px !important;
+    height: 10px !important;
   }
   .pn {
     display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .bottomBarStatItem:nth-child(2) {
+    display: none;
   }
 }
 
