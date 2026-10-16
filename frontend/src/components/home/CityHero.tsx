@@ -250,6 +250,9 @@ export default function CityHero() {
   const camRef = useRef({ z: 1, cx: 720, cy: 400 });
   const tgtRef = useRef({ z: 1, cx: 720, cy: 400 });
   const dragRef = useRef<{ x: number; y: number } | null>(null);
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartZRef = useRef<number>(1);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
 
@@ -407,38 +410,78 @@ export default function CityHero() {
     };
   }, [city, getVM, zoomAt]);
 
-  // Pointer event handlers for pan dragging
+  // Pointer event handlers for pan dragging (supports mouse and mobile touch/pinch)
   const handlePointerDown = (e: React.PointerEvent<HTMLElement>) => {
     const target = e.target as HTMLElement | null;
-    if (e.pointerType !== 'mouse' || e.button !== 0) return;
     if (target?.closest('button, input, select, a, [data-card]')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
 
-    dragRef.current = { x: e.clientX, y: e.clientY };
-    if (stageRef.current) {
-      stageRef.current.style.cursor = 'grabbing';
-      try {
-        stageRef.current.setPointerCapture(e.pointerId);
-      } catch {
-        // ignore
+    activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
+    if (activePointersRef.current.size === 1) {
+      dragRef.current = { x: e.clientX, y: e.clientY };
+      if (stageRef.current) {
+        stageRef.current.style.cursor = 'grabbing';
       }
+    } else if (activePointersRef.current.size === 2) {
+      dragRef.current = null;
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinchStartDistRef.current = dist > 0 ? dist : 1;
+      pinchStartZRef.current = tgtRef.current.z;
     }
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLElement>) => {
-    if (!dragRef.current) return;
-    const m = getVM();
-    const tgt = tgtRef.current;
-    tgt.cx -= (e.clientX - dragRef.current.x) / (m.s * tgt.z);
-    tgt.cy -= (e.clientY - dragRef.current.y) / (m.s * tgt.z);
-    dragRef.current.x = e.clientX;
-    dragRef.current.y = e.clientY;
-    clampTgt();
+    if (!activePointersRef.current.has(e.pointerId)) return;
+    activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activePointersRef.current.size === 1 && dragRef.current) {
+      const m = getVM();
+      const tgt = tgtRef.current;
+      const dx = e.clientX - dragRef.current.x;
+      const dy = e.clientY - dragRef.current.y;
+      tgt.cx -= dx / (m.s * tgt.z);
+      tgt.cy -= dy / (m.s * tgt.z);
+      dragRef.current.x = e.clientX;
+      dragRef.current.y = e.clientY;
+      clampTgt();
+    } else if (activePointersRef.current.size === 2 && pinchStartDistRef.current) {
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const ratio = dist / pinchStartDistRef.current;
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+      zoomAt(midX, midY, pinchStartZRef.current * ratio, 0.8);
+    }
   };
 
-  const handlePointerUp = () => {
-    dragRef.current = null;
-    if (stageRef.current) {
-      stageRef.current.style.cursor = 'grab';
+  const handlePointerUp = (e: React.PointerEvent<HTMLElement>) => {
+    activePointersRef.current.delete(e.pointerId);
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // ignore
+    }
+
+    if (activePointersRef.current.size === 1) {
+      const remaining = Array.from(activePointersRef.current.values())[0];
+      dragRef.current = { x: remaining.x, y: remaining.y };
+      pinchStartDistRef.current = null;
+    } else if (activePointersRef.current.size === 0) {
+      dragRef.current = null;
+      pinchStartDistRef.current = null;
+      if (stageRef.current) {
+        stageRef.current.style.cursor = 'grab';
+      }
     }
   };
 
